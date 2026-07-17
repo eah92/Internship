@@ -41,6 +41,12 @@ header .sub{font-size:11px;color:var(--dim)}
 .tgl3{display:flex;gap:3px}
 .tgl3 .btn{padding:3px 7px}
 .tgl3 .btn.sel{background:#1c4a72;border-color:var(--accent);color:#fff}
+#simCtl{margin-left:auto;display:flex;gap:4px}
+#simCtl .btn.sel{background:#1c4a72;border-color:var(--accent);color:#fff}
+.lessonBtns{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:6px}
+.lessonBtns .btn{text-align:left}
+.lessonBtns .btn.sel{background:#1c4a72;border-color:var(--accent);color:#fff}
+#lessonTxt{color:var(--ctl);min-height:34px;font-size:11px;line-height:1.5;border-top:1px dashed var(--line);padding-top:6px;margin-top:2px}
 #esdBtn{width:100%;padding:12px;font-size:15px;font-weight:700;background:#5d1414;border:2px solid #b33;color:#ffb3b3;border-radius:8px;cursor:pointer;letter-spacing:2px}
 #esdBtn:hover{background:#7a1a1a}
 #esdBtn.active{background:var(--alm);color:#fff;animation:blink .6s steps(2) infinite}
@@ -106,6 +112,7 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
   <span class="statusChip" id="chipUnit">UNIT STOPPED</span>
   <span class="statusChip" id="chipPress">0.0 bar</span>
   <span class="statusChip" id="chipSpeed">0 % n</span>
+  <span id="simCtl"><button class="btn" data-s="0" title="pause">⏸</button><button class="btn sel" data-s="1">1×</button><button class="btn" data-s="2">2×</button><button class="btn" data-s="4">4×</button></span>
 </header>
 <div id="main">
 <div id="schemwrap">
@@ -440,6 +447,19 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
     </div>
     <button id="esdBtn">⬤ EMERGENCY SHUTDOWN — ESD</button>
     <button id="resetBtn" class="btn">RESET TRIP / RE-ARM SOLENOIDS MEX70 AA001+AA002</button>
+  </div>
+
+  <div class="sect"><h2>Guided lessons — the simulator drives, you watch the oil</h2>
+    <div class="lessonBtns">
+      <button class="btn" data-l="start">1 · Normal start-up</button>
+      <button class="btn" data-l="stop">2 · Normal shutdown</button>
+      <button class="btn" data-l="esd">3 · Emergency shutdown</button>
+      <button class="btn" data-l="rej">4 · Load rejection / overspeed</button>
+      <button class="btn" data-l="repl">5 · Hub oil replenishing</button>
+      <button class="btn" data-l="cool">6 · Oil cooling circuit</button>
+    </div>
+    <button class="btn" id="lessonStop" style="width:100%">■ STOP LESSON</button>
+    <div id="lessonTxt">Pick a lesson — each one operates the real switching sequence step by step and explains which valves move and where the oil flows.</div>
   </div>
 
   <div class="sect"><h2>Oil pressure supply · MEX11 / MEX12 / MEX16 / MEX17</h2>
@@ -939,9 +959,88 @@ function render(wgT,ruT,dwg,dru,repl){
   $('lampCL103H').classList.toggle('tripR',S.hub<20);
 }
 
-logEv('Simulator ready. Suggested lesson: 1) put Oil pump 1 in ON — watch it charge the accumulators','g');
-logEv('2) open wicket gates with the slider · 3) close breaker at ~100 % speed · 4) try LOAD REJECTION or the red ESD button','g');
-setInterval(tick,60);
+/* ================= GUIDED LESSONS ================= */
+function setPump(key,mode,tgl){S[key]=mode;syncTgl(tgl,mode);}
+function setWG(v){S.wgSet=v;$('wgSet').value=v;$('wgSetV').textContent=v+' %';}
+const LESSONS={
+start:{name:'Normal start-up',steps:()=>[
+ {txt:'START-UP · Everything begins at the SUMP TANK (MEX10 BB001, EL 245.0) — the reservoir all oil returns to. The unit is stopped, pressure 0.',dwell:5},
+ {txt:'Oil pump 1 MEX11 AP001 starts (motor M01). Watch the suction line from the sump and the discharge — the unloader solenoid MEX11 AA001 loads the pump so it pumps against pressure instead of recirculating.',act:()=>setPump('p1','on','p1mode'),dwell:5},
+ {txt:'Oil pump 2 MEX12 AP001 goes to AUTO — it is the standby pump and will cut in by pressure switch MEX16 CP101 if pressure ever drops below 52 bar.',act:()=>setPump('p2','auto','p2mode'),dwell:4},
+ {txt:'The pump charges the PISTON ACCUMULATORS MEX16/MEX17 BB001. Oil pushes the piston up against the nitrogen cushion (bottles BB002–BB010). The N₂ stores the energy for emergency closing.',until:()=>S.press>=58,dwell:6},
+ {txt:'System pressure ≥ 58 bar — the energy reserve is ready. ESD solenoids MEX70 AA001 + AA002 are energized (armed): the shutdown chain is healthy.',dwell:5},
+ {txt:'Opening command: proportional pilot valve MEX20 AA001 strokes main stage AA002 — pressure oil flows through throttle AA701 to the OPEN side of the wicket-gate servomotor. Gates to 15 % for start.',act:()=>setWG(15),dwell:5},
+ {txt:'Water accelerates the runner. The runner-blade cam (MEX30) keeps blades at start position while speed rises to nominal…',until:()=>S.spd>=95,dwell:4},
+ {txt:'Speed ≈ 100 % → generator breaker closes, unit synchronized to the grid.',act:()=>{if(!S.esd&&S.spd>=90){S.brk=true;logEv('Generator breaker CLOSED — unit on grid','g');}},dwell:4},
+ {txt:'Loading: gates open towards 70 %. Watch MEX30 — pilot AA001 / main stage AA002 send oil through the rotating OIL HEAD into the hub servomotor; the blade pitch follows the cam for best efficiency.',act:()=>setWG(70),until:()=>S.wg>=65,dwell:5},
+ {txt:'✔ Unit on grid at ~70 % load. Pumps now only top up the accumulators (unloader cycling) — the governor consumes oil only when it moves a servomotor.',dwell:8},
+]},
+stop:{name:'Normal shutdown',steps:()=>[
+ {txt:'SHUTDOWN · First de-load: gates ramp down to speed-no-load. Oil flows OUT of the servomotor open-side back through the main stage to the tank line (blue).',act:()=>setWG(12),until:()=>S.wg<=16,dwell:5},
+ {txt:'Breaker opens at minimum load.',act:()=>{if(S.brk){S.brk=false;logEv('Generator breaker OPENED','e');}},dwell:4},
+ {txt:'Gates fully close — runner coasts down on friction and water brake. Blades go to closed position via MEX30.',act:()=>setWG(0),until:()=>S.spd<10,dwell:5},
+ {txt:'Pumps to OFF/AUTO — accumulators stay charged as standstill reserve.',act:()=>{setPump('p1','auto','p1mode');setPump('p2','auto','p2mode');},dwell:4},
+ {txt:'✔ Unit stopped. Note the leakage unit MEX18/MEX19 still pumps collected seal leakage back to the sump.',dwell:6},
+]},
+esd:{name:'Emergency shutdown',steps:()=>[
+ {txt:'EMERGENCY SHUTDOWN · The fail-safe chain: MEX70 AA001+AA002 (redundant solenoids) → hydraulic valve AA003 → cartridge valves AA010+AA012. Any solenoid dropping out = trip. Triggering now…',dwell:6},
+ {txt:'TRIP! Solenoids de-energize, the cartridge valves open wide: accumulator oil goes STRAIGHT to the wicket-gate close side through the ESD check valves MEX20 AA003–006 — the proportional valve is bypassed completely.',act:()=>trip('LESSON — ESD DEMONSTRATION'),dwell:6},
+ {txt:'Gates slam shut in ~8 s (vs ~22 s normal). MEX70 AA005 simultaneously drives the runner blades closed. This works with zero electricity — pure stored nitrogen energy.',until:()=>S.wg<1,dwell:6},
+ {txt:'Gates closed, speed collapsing. The trip stays LATCHED until you press RESET (solenoids re-energize only when it is safe).',until:()=>S.spd<10,dwell:5},
+ {txt:'✔ Press RESET TRIP to re-arm, then run Lesson 1 to restart. That is the whole point of the accumulators: closing energy is always available.',dwell:8},
+]},
+rej:{name:'Load rejection / overspeed',steps:()=>[
+ {txt:'LOAD REJECTION · Worst case: unit at full load suddenly loses the grid. Preparing — unit must be on load first (runs Lesson 1 automatically if needed).',act:()=>{if(!S.brk){runLesson('start',()=>runLesson('rej'));}},until:()=>S.brk&&S.wg>=60,dwell:5},
+ {txt:'BREAKER OPENS AT FULL LOAD! All water power now accelerates the runner — watch the speed gauge race upward.',act:()=>{S.brk=false;logEv('*** FULL LOAD REJECTION ***','a');},dwell:4},
+ {txt:'At 115 % the ELECTRICAL overspeed trip fires the ESD chain. (The mechanical flyweight device MEA70 AA201 on the shaft is the last line of defence at 140 % — try disabling the electrical trip later to see it act.)',until:()=>S.esd,dwell:6},
+ {txt:'Cartridge valves dump accumulator oil to the close side — gates race shut, speed peaks and falls.',until:()=>S.spd<105,dwell:5},
+ {txt:'✔ Speed recovered without damage. Reset the trip when the unit is calm.',dwell:8},
+]},
+repl:{name:'Hub oil replenishing',steps:()=>[
+ {txt:'HUB OIL · The runner hub is oil-filled (tank MEX30 BB001) for the blade servomotor and to keep water out through the blade seals. Slow loss is normal — level switch MEX30 CL103 warns when TOO LOW.',dwell:6},
+ {txt:'Replenishing path: pressure header → isolating valves AA501/AA502 → solenoid AA004 → throttle BP001 → hub tank. Opening the solenoid now (needs system pressure — run Lesson 1 first if the bar does not move).',act:()=>{S.iso1=true;S.iso2=true;S.hubSol=true;logEv('MEX30 AA501/AA502 open, solenoid AA004 OPEN','g');},dwell:6},
+ {txt:'Watch the purple-orange line from the header to the hub tank and the level bar rising. The manual bypass AA602 exists for solenoid failure.',until:()=>S.hub>=95,dwell:5},
+ {txt:'Tank full — solenoid closes again.',act:()=>{S.hubSol=false;logEv('MEX30 AA004 CLOSED','g');},dwell:4},
+ {txt:'✔ In the real plant this happens automatically from the CL103 level signal.',dwell:6},
+]},
+cool:{name:'Oil cooling circuit',steps:()=>[
+ {txt:'COOLING · Pumping work heats the oil. Watch the temperature bar — above 55 °C the alarm comes.',dwell:5},
+ {txt:'Cooling pump MEX14 AP001 starts: it draws hot oil from the sump and pushes it through the plate cooler MEX14 AC001 (safety valve AA301 protects the low-pressure circuit).',act:()=>{S.cool=true;logEv('Cooling pump MEX14 AP001 STARTED','g');},dwell:6},
+ {txt:'Solenoid MEX14 AA001 opens the raw COOLING WATER through the other side of the cooler — only now is heat actually removed.',act:()=>{S.cw=true;logEv('Cooling water solenoid MEX14 AA001 OPEN','g');},dwell:6},
+ {txt:'Oil returns cooled to the sump. Temperature falls toward 35 °C…',until:()=>S.temp<=40,dwell:6},
+ {txt:'✔ Circuit off again — in AUTO this cycles on the temperature switch.',act:()=>{S.cool=false;S.cw=false;logEv('Cooling circuit stopped','g');},dwell:5},
+]}};
+const LS={key:null,steps:null,idx:-1,t:0,after:null};
+function runLesson(key,after){
+  LS.key=key;LS.steps=LESSONS[key].steps();LS.idx=-1;LS.t=0;LS.after=after||null;
+  document.querySelectorAll('.lessonBtns .btn').forEach(b=>b.classList.toggle('sel',b.dataset.l===key));
+  logEv('LESSON started: '+LESSONS[key].name,'g');advLesson();}
+function stopLesson(quiet){if(!LS.key)return;LS.key=null;
+  document.querySelectorAll('.lessonBtns .btn').forEach(b=>b.classList.remove('sel'));
+  if(!quiet){$('lessonTxt').textContent='Lesson stopped.';logEv('Lesson stopped');}}
+function advLesson(){LS.idx++;LS.t=0;
+  if(LS.idx>=LS.steps.length){const k=LS.key,a=LS.after;stopLesson(true);
+    $('lessonTxt').textContent='✔ Lesson finished: '+LESSONS[k].name;logEv('LESSON finished: '+LESSONS[k].name,'g');
+    if(a)a();return;}
+  const st=LS.steps[LS.idx];
+  $('lessonTxt').textContent=(LS.idx+1)+'/'+LS.steps.length+' · '+st.txt;
+  if(st.act)st.act();}
+function lessonTick(){if(!LS.key)return;LS.t+=DT;
+  const st=LS.steps[LS.idx];if(!st)return;
+  const dwellOk=LS.t>=(st.dwell||3);
+  if(dwellOk&&(!st.until||st.until()))advLesson();}
+document.querySelectorAll('.lessonBtns .btn').forEach(b=>b.onclick=()=>runLesson(b.dataset.l));
+$('lessonStop').onclick=()=>stopLesson();
+
+/* ================= MAIN LOOP + SPEED CONTROL ================= */
+let simMul=1;
+document.querySelectorAll('#simCtl .btn').forEach(b=>b.onclick=()=>{
+  simMul=+b.dataset.s;
+  document.querySelectorAll('#simCtl .btn').forEach(x=>x.classList.toggle('sel',x===b));
+  logEv(simMul===0?'Simulation PAUSED':'Simulation speed '+simMul+'×');});
+logEv('Simulator ready. Use the GUIDED LESSONS panel (right) — start with “1 · Normal start-up” — or drive everything yourself.','g');
+logEv('Hover components on the diagram for their KKS code & function; click pumps / solenoids / valves to switch them.','g');
+setInterval(()=>{for(let i=0;i<simMul;i++){tick();lessonTick();}},60);
 </script>
 </body>
 </html>
