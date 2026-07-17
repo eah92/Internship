@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kaplan Bulb Turbine — Governor Hydraulic System Simulator (NBE-102-02-001)</title>
+<style>
+:root{
+  --bg:#0d1420; --panel:#151f30; --panel2:#1b2740; --line:#2a3a55;
+  --txt:#dbe6f5; --dim:#8296b3; --accent:#3ca0ff;
+  --oil:#ff8c3a; --ctl:#ffd23f; --drn:#4da3ff; --leak:#b07cff;
+  --cool:#3ce0d0; --wat:#41b0ff; --n2:#59d97e; --sig:#ff5c5c;
+  --ok:#3fd68f; --warn:#ffb020; --alm:#ff4d4d;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',Arial,sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;align-items:center;gap:14px;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+header h1{font-size:15px;font-weight:600;letter-spacing:.4px}
+header .sub{font-size:11px;color:var(--dim)}
+.statusChip{font-size:11px;padding:3px 10px;border-radius:12px;border:1px solid var(--line);background:var(--panel2)}
+.statusChip.run{border-color:var(--ok);color:var(--ok)}
+.statusChip.trip{border-color:var(--alm);color:var(--alm);animation:blink 1s steps(2) infinite}
+#main{flex:1;display:flex;min-height:0}
+#schemwrap{flex:1;display:flex;flex-direction:column;min-width:0}
+#schem{flex:1;min-height:0;background:radial-gradient(1200px 700px at 45% 40%, #101a2c 0%, #0b111c 80%)}
+#schem svg{width:100%;height:100%}
+#tip{height:40px;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--panel);border-top:1px solid var(--line);font-size:12px;color:var(--dim);overflow:hidden;white-space:nowrap}
+#tip b{color:var(--accent);font-family:Consolas,monospace}
+#tip .st{color:var(--ctl)}
+#panel{width:370px;background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;padding:10px 12px 30px;font-size:12px}
+.sect{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:10px}
+.sect h2{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:8px;border-bottom:1px solid var(--line);padding-bottom:4px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:5px 0}
+.row label{color:var(--txt);flex:1}
+.kks{font-family:Consolas,monospace;font-size:10px;color:var(--dim)}
+.btn{background:#24344f;border:1px solid var(--line);color:var(--txt);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:11px;transition:.15s}
+.btn:hover{border-color:var(--accent)}
+.btn.on{background:#14452e;border-color:var(--ok);color:var(--ok)}
+.btn.offst{background:#3a2020;border-color:#7a4040;color:#e09090}
+.btn.mode{min-width:46px}
+.tgl3{display:flex;gap:3px}
+.tgl3 .btn{padding:3px 7px}
+.tgl3 .btn.sel{background:#1c4a72;border-color:var(--accent);color:#fff}
+#esdBtn{width:100%;padding:12px;font-size:15px;font-weight:700;background:#5d1414;border:2px solid #b33;color:#ffb3b3;border-radius:8px;cursor:pointer;letter-spacing:2px}
+#esdBtn:hover{background:#7a1a1a}
+#esdBtn.active{background:var(--alm);color:#fff;animation:blink .6s steps(2) infinite}
+#resetBtn{width:100%;margin-top:6px}
+.bar{flex:1;height:12px;background:#0c1524;border:1px solid var(--line);border-radius:6px;overflow:hidden;position:relative}
+.bar i{display:block;height:100%;background:var(--accent);width:0%;transition:width .2s}
+.bar.oil i{background:linear-gradient(90deg,#c96a20,var(--oil))}
+.bar.grn i{background:var(--ok)}
+.bar.prp i{background:var(--leak)}
+.val{min-width:52px;text-align:right;font-family:Consolas,monospace;font-size:11px;color:var(--ctl)}
+input[type=range]{flex:1;accent-color:var(--accent);height:20px}
+.gauges{display:flex;gap:8px;justify-content:space-around;margin-bottom:4px}
+.gauge{text-align:center}
+.gauge svg{width:118px;height:74px}
+.gauge .gv{font-family:Consolas,monospace;font-size:13px;color:#fff}
+.gauge .gl{font-size:10px;color:var(--dim)}
+.lamps{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.lamp{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--dim);padding:3px 6px;background:#101a2c;border-radius:4px;border:1px solid var(--line)}
+.lamp i{width:9px;height:9px;border-radius:50%;background:#33425c;flex:none}
+.lamp.on{color:#ffd9d9;border-color:#7a3030}
+.lamp.on i{background:var(--alm);box-shadow:0 0 6px var(--alm);animation:blink 1s steps(2) infinite}
+.lamp.wn.on{color:#ffe9c4;border-color:#7a5a20}
+.lamp.wn.on i{background:var(--warn);box-shadow:0 0 6px var(--warn)}
+#log{max-height:170px;overflow-y:auto;font-family:Consolas,monospace;font-size:10px;line-height:1.5}
+#log div{border-bottom:1px dashed #223050;padding:2px 0;color:var(--dim)}
+#log .e{color:#ffd23f}
+#log .a{color:#ff8080}
+#log .g{color:#7fe0a8}
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:3px;font-size:10px;color:var(--dim)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend b{width:22px;height:3px;border-radius:2px}
+@keyframes blink{50%{opacity:.35}}
+@keyframes dash{to{stroke-dashoffset:-24}}
+/* SVG */
+text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
+.lbl{font-size:8px}
+.lblB{font-size:9px;fill:var(--txt);font-weight:600}
+.kkstxt{font-size:7px;fill:#6d84a6;font-family:Consolas,monospace}
+.el{font-size:9px;fill:#51648a}
+.eltxt{font-size:9px;fill:#51648a;font-style:italic}
+.pipe{fill:none;stroke:#33425c;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.pipe.thin{stroke-width:2}
+.flow{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:8 6;animation:dash .55s linear infinite;pointer-events:none}
+.flow.thin{stroke-width:2}
+.flow.off{display:none}
+.flow.rev{animation-direction:reverse}
+.comp{cursor:pointer}
+.comp:hover .hitbox{stroke:var(--accent);stroke-opacity:.9}
+.hitbox{fill:transparent;stroke:transparent;stroke-width:1.5;rx:3}
+.body{fill:#1d2a42;stroke:#5b7194;stroke-width:1.4}
+.body2{fill:#16233a;stroke:#49608a;stroke-width:1.2}
+.runY{fill:#145238!important;stroke:#3fd68f!important}
+.energ{fill:#6b5714!important;stroke:#ffd23f!important}
+.tripR{fill:#5d1414!important;stroke:#ff5c5c!important}
+.blkbox{fill:rgba(30,45,72,.35);stroke:#33425c;stroke-dasharray:5 4;stroke-width:1;rx:6}
+.blkttl{font-size:9px;fill:#7d92b5;font-weight:600;letter-spacing:.5px}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚙ Kaplan Bulb Turbine — Governor Hydraulic System Simulator</h1>
+  <span class="sub">ANDRITZ Hydro NBE-102-02-001 · New Bong Escape · interactive teaching model</span>
+  <span class="statusChip" id="chipUnit">UNIT STOPPED</span>
+  <span class="statusChip" id="chipPress">0.0 bar</span>
+  <span class="statusChip" id="chipSpeed">0 % n</span>
+</header>
+<div id="main">
+<div id="schemwrap">
+<div id="schem">
+<svg viewBox="0 0 1180 880" preserveAspectRatio="xMidYMid meet">
+<defs>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L10,5L0,10z" fill="#41b0ff"/></marker>
+</defs>
+
+<!-- ======== ELEVATION LABELS ======== -->
+<text class="eltxt" x="14" y="100">EL 255.5</text>
+<text class="eltxt" x="14" y="315">EL 245.0</text>
+<text class="eltxt" x="14" y="525">EL 235.5</text>
+<text class="eltxt" x="14" y="755">EL 227.4</text>
+<line x1="10" y1="108" x2="60" y2="108" stroke="#2a3a55" stroke-dasharray="3 4"/>
+<line x1="10" y1="323" x2="60" y2="323" stroke="#2a3a55" stroke-dasharray="3 4"/>
+<line x1="10" y1="533" x2="60" y2="533" stroke="#2a3a55" stroke-dasharray="3 4"/>
+<line x1="10" y1="763" x2="60" y2="763" stroke="#2a3a55" stroke-dasharray="3 4"/>
+
+<!-- ======== PIPES (base) — flow overlays are cloned by JS ======== -->
+<g id="pipes">
+  <path class="pipe" id="pHdr"     d="M115,190 H865"/>
+  <path class="pipe" id="pSuc1"    d="M170,700 V636"/>
+  <path class="pipe" id="pDis1"    d="M170,604 V570"/>
+  <path class="pipe" id="pSuc2"    d="M240,700 V636"/>
+  <path class="pipe" id="pDis2"    d="M240,604 V570 H185"/>
+  <path class="pipe" id="pRiser"   d="M170,570 V190"/>
+  <path class="pipe" id="pRel1"    d="M170,585 H120 V700"/>
+  <path class="pipe" id="pRel2"    d="M240,585 H290 V700"/>
+  <path class="pipe" id="pAcc16"   d="M130,150 V190"/>
+  <path class="pipe" id="pAcc17"   d="M310,150 V190"/>
+  <path class="pipe thin" id="pN2a" d="M130,60 V42 H250"/>
+  <path class="pipe thin" id="pN2b" d="M310,42 H430 M310,60 V42"/>
+  <path class="pipe thin" id="pCP"  d="M480,190 V172 M505,190 V172"/>
+  <path class="pipe" id="pHdrWG"   d="M300,190 V300 H310"/>
+  <path class="pipe" id="pHdrESD"  d="M550,190 V255"/>
+  <path class="pipe" id="pHdrRU"   d="M760,190 V282"/>
+  <path class="pipe" id="pHdrRepl" d="M865,190 V455 H725 V470"/>
+  <path class="pipe thin" id="pByp" d="M865,262 H900 V318 H865"/>
+  <path class="pipe" id="pWGopen"  d="M350,324 V355 H460 V415 H890 V320"/>
+  <path class="pipe" id="pWGclose" d="M350,282 V262 H1035 V300 H980"/>
+  <path class="pipe" id="pESDtoWG" d="M640,335 H660 V262"/>
+  <path class="pipe" id="pESDtoRU" d="M581,358 H670 V325 H680"/>
+  <path class="pipe" id="pRUopen"  d="M780,300 H876 V498"/>
+  <path class="pipe" id="pRUclose" d="M780,340 H866 V498"/>
+  <path class="pipe thin" id="pShaftO" d="M895,514 H1045"/>
+  <path class="pipe thin" id="pShaftC" d="M895,526 H1045"/>
+  <path class="pipe" id="pHub"     d="M725,530 V558 H860 V540"/>
+  <path class="pipe" id="pDrnWG"   d="M370,324 V470"/>
+  <path class="pipe" id="pDrnESD"  d="M550,390 V470"/>
+  <path class="pipe" id="pDrnRU"   d="M740,324 V470"/>
+  <path class="pipe" id="pDrnHdr"  d="M760,470 H305 V700"/>
+  <path class="pipe" id="pCoolS"   d="M360,700 V636"/>
+  <path class="pipe" id="pCoolD"   d="M360,604 V560 H400"/>
+  <path class="pipe" id="pCoolR"   d="M450,560 H480 V700"/>
+  <path class="pipe thin" id="wWaterIn"  d="M385,490 H413"/>
+  <path class="pipe thin" id="wWaterThru" d="M425,504 V640"/>
+  <path class="pipe" id="pLeakIn"  d="M920,570 V770 H740"/>
+  <path class="pipe" id="pLkS1"    d="M650,740 V724"/>
+  <path class="pipe" id="pLkS2"    d="M710,740 V724"/>
+  <path class="pipe" id="pLeak1"   d="M650,700 V660"/>
+  <path class="pipe" id="pLeak2"   d="M710,700 V660 H650"/>
+  <path class="pipe" id="pLeakHdr" d="M650,660 H530 V700"/>
+  <path class="pipe thin" id="sPil1" d="M498,277 V300"/>
+  <path class="pipe thin" id="sPil2" d="M538,277 V300"/>
+  <path class="pipe thin" id="sPil3" d="M521,313 H600"/>
+  <path class="pipe thin" id="sPil4" d="M503,326 V345"/>
+  <path class="pipe thin" id="sOspd" d="M952,480 V440 H620 V392"/>
+</g>
+
+<!-- ======== ACCUMULATOR PLANT  EL 255.5 ======== -->
+<text class="blkttl" x="112" y="30">PRESSURE ACCUMULATOR PLANT (63 bar)</text>
+<g class="comp" data-id="MEX16BB001">
+  <rect class="hitbox" x="106" y="52" width="48" height="102"/>
+  <rect class="body" x="110" y="60" width="40" height="90" rx="6"/>
+  <rect id="acc16oil" x="112" y="100" width="36" height="48" fill="#b05e1f" rx="3"/>
+  <line id="acc16pist" x1="112" y1="100" x2="148" y2="100" stroke="#dbe6f5" stroke-width="3"/>
+  <text class="kkstxt" x="108" y="164">MEX16 BB001</text>
+</g>
+<g class="comp" data-id="MEX16BBN2">
+  <rect class="hitbox" x="160" y="44" width="100" height="52"/>
+  <g id="n2rack16"></g>
+  <text class="kkstxt" x="162" y="106">N2 ×9  BB002-010</text>
+</g>
+<g class="comp" data-id="MEX16AA301"><rect class="hitbox" x="84" y="158" width="22" height="20"/><path d="M95,160 l8,8 -16,0 z" fill="none" stroke="#8a6" stroke-width="1.5"/><text class="kkstxt" x="66" y="182">AA301</text></g>
+<g class="comp" data-id="MEX16AA302"><rect class="hitbox" x="84" y="30" width="22" height="20"/><path d="M95,48 l8,-8 -16,0 z" fill="none" stroke="#8a6" stroke-width="1.5"/><text class="kkstxt" x="66" y="28">AA302</text></g>
+<g class="comp" data-id="MEX17BB001">
+  <rect class="hitbox" x="286" y="52" width="48" height="102"/>
+  <rect class="body" x="290" y="60" width="40" height="90" rx="6"/>
+  <rect id="acc17oil" x="292" y="100" width="36" height="48" fill="#b05e1f" rx="3"/>
+  <line id="acc17pist" x1="292" y1="100" x2="328" y2="100" stroke="#dbe6f5" stroke-width="3"/>
+  <text class="kkstxt" x="288" y="164">MEX17 BB001</text>
+</g>
+<g class="comp" data-id="MEX17BBN2">
+  <rect class="hitbox" x="340" y="44" width="100" height="52"/>
+  <g id="n2rack17"></g>
+  <text class="kkstxt" x="342" y="106">N2 ×9  BB002-010</text>
+</g>
+<g class="comp" data-id="MEX17AA301"><rect class="hitbox" x="264" y="158" width="22" height="20"/><path d="M275,160 l8,8 -16,0 z" fill="none" stroke="#8a6" stroke-width="1.5"/><text class="kkstxt" x="246" y="182">AA301</text></g>
+<g class="comp" data-id="MEX17AA302"><rect class="hitbox" x="264" y="30" width="22" height="20"/><path d="M275,48 l8,-8 -16,0 z" fill="none" stroke="#8a6" stroke-width="1.5"/><text class="kkstxt" x="246" y="28">AA302</text></g>
+<g class="comp" data-id="MEX16CP101"><rect class="hitbox" x="468" y="150" width="24" height="24"/><circle cx="480" cy="162" r="9" class="body"/><text class="lbl" x="475" y="166" fill="#dbe6f5">P</text><text class="kkstxt" x="460" y="142">CP101</text></g>
+<g class="comp" data-id="MEX16CP102"><rect class="hitbox" x="493" y="150" width="24" height="24"/><circle cx="505" cy="162" r="9" class="body"/><text class="lbl" x="500" y="166" fill="#dbe6f5">P</text><text class="kkstxt" x="497" y="142">CP102</text></g>
+<text class="lblB" x="600" y="182">PRESSURE HEADER 63 bar</text>
+
+<!-- ======== PUMP STATION + SUMP  EL 227.4 ======== -->
+<text class="blkttl" x="92" y="536">OIL PRESSURE SUPPLY UNIT</text>
+<g class="comp" data-id="MEX11AP001">
+  <rect class="hitbox" x="148" y="598" width="44" height="60"/>
+  <circle id="pump1body" class="body" cx="170" cy="620" r="16"/>
+  <g id="pump1imp"><path d="M170,608 l7,18 h-14 z" fill="#8fb4e8"/></g>
+  <rect class="body2" x="152" y="642" width="36" height="14" rx="3"/><text class="lbl" x="160" y="652" fill="#9fb4d4">M01</text>
+  <text class="kkstxt" x="132" y="672">MEX11 AP001</text>
+</g>
+<path d="M164,552 l6,10 6,-10 z M164,566 l6,-10 6,10 z" fill="none" stroke="#5b7194" stroke-width="1.3"/>
+<g class="comp" data-id="MEX11AA001"><rect class="hitbox" x="190" y="580" width="22" height="20"/><rect id="sol11" class="body" x="192" y="582" width="18" height="15" rx="2"/><line x1="195" y1="586" x2="207" y2="593" stroke="#9fb4d4"/><text class="kkstxt" x="212" y="592">AA001</text></g>
+<g class="comp" data-id="MEX11AA301"><rect class="hitbox" x="130" y="574" width="22" height="22"/><path d="M141,578 l7,9 h-14 z" fill="none" stroke="#c98" stroke-width="1.4"/><text class="kkstxt" x="112" y="574">AA301</text></g>
+<g class="comp" data-id="MEX12AP001">
+  <rect class="hitbox" x="218" y="598" width="44" height="60"/>
+  <circle id="pump2body" class="body" cx="240" cy="620" r="16"/>
+  <g id="pump2imp"><path d="M240,608 l7,18 h-14 z" fill="#8fb4e8"/></g>
+  <rect class="body2" x="222" y="642" width="36" height="14" rx="3"/><text class="lbl" x="230" y="652" fill="#9fb4d4">M01</text>
+  <text class="kkstxt" x="220" y="672">MEX12 AP001</text>
+</g>
+<g class="comp" data-id="MEX12AA001"><rect class="hitbox" x="253" y="596" width="22" height="20"/><rect id="sol12" class="body" x="255" y="598" width="18" height="15" rx="2"/><line x1="258" y1="602" x2="270" y2="609" stroke="#9fb4d4"/><text class="kkstxt" x="256" y="594">AA001</text></g>
+<g class="comp" data-id="MEX12AA301"><rect class="hitbox" x="272" y="574" width="22" height="22"/><path d="M283,578 l7,9 h-14 z" fill="none" stroke="#c98" stroke-width="1.4"/><text class="kkstxt" x="294" y="588">AA301</text></g>
+
+<!-- cooling -->
+<g class="comp" data-id="MEX14AP001">
+  <rect class="hitbox" x="340" y="600" width="42" height="56"/>
+  <circle id="pumpCbody" class="body" cx="360" cy="620" r="14"/>
+  <g id="pumpCimp"><path d="M360,610 l6,15 h-12 z" fill="#8fd8e8"/></g>
+  <rect class="body2" x="344" y="640" width="32" height="13" rx="3"/><text class="lbl" x="351" y="650" fill="#9fb4d4">M01</text>
+  <text class="kkstxt" x="330" y="668">MEX14 AP001</text>
+</g>
+<g class="comp" data-id="MEX14AA301"><rect class="hitbox" x="325" y="576" width="20" height="20"/><path d="M335,580 l6,8 h-12 z" fill="none" stroke="#c98" stroke-width="1.3"/><text class="kkstxt" x="305" y="574">AA301</text></g>
+<g class="comp" data-id="MEX14AC001">
+  <rect class="hitbox" x="396" y="536" width="58" height="48"/>
+  <rect class="body" x="400" y="540" width="50" height="40" rx="4"/>
+  <path d="M405,560 l8,-10 8,20 8,-20 8,20 8,-10" fill="none" stroke="#3ce0d0" stroke-width="1.6"/>
+  <text class="kkstxt" x="398" y="594">MEX14 AC001 COOLER</text>
+</g>
+<g class="comp" data-id="MEX14AA001"><rect class="hitbox" x="410" y="478" width="30" height="26"/><rect id="solCW" class="body" x="413" y="481" width="24" height="20" rx="2"/><line x1="417" y1="486" x2="433" y2="496" stroke="#9fb4d4"/><text class="kkstxt" x="440" y="494">AA001 · CW</text></g>
+<text class="lbl" x="408" y="656" fill="#41b0ff">cooling water ▼</text>
+
+<!-- sump tank -->
+<g class="comp" data-id="MEX10TANK">
+  <rect class="hitbox" x="86" y="696" width="458" height="118"/>
+  <rect class="body2" x="90" y="700" width="450" height="110" rx="6"/>
+  <rect id="sumpOil" x="93" y="740" width="444" height="67" fill="#7a4a1d" rx="4"/>
+  <text class="lblB" x="230" y="726">OIL SUMP TANK · MEX10</text>
+</g>
+<g class="comp" data-id="MEX10CL101"><rect class="hitbox" x="542" y="712" width="56" height="16"/><rect id="lampCL101" class="body" x="544" y="714" width="10" height="10"/><text class="kkstxt" x="558" y="723">CL101 hi</text></g>
+<g class="comp" data-id="MEX10CL102"><rect class="hitbox" x="542" y="756" width="56" height="16"/><rect id="lampCL102" class="body" x="544" y="758" width="10" height="10"/><text class="kkstxt" x="558" y="767">CL102 lo</text></g>
+<g class="comp" data-id="MEX10CL103"><rect class="hitbox" x="542" y="784" width="62" height="16"/><rect id="lampCL103" class="body" x="544" y="786" width="10" height="10"/><text class="kkstxt" x="558" y="795">CL103 lo-lo</text></g>
+
+<!-- leakage unit -->
+<text class="blkttl" x="620" y="694">LEAKAGE OIL UNIT</text>
+<g class="comp" data-id="MEX18AP001">
+  <rect class="hitbox" x="632" y="698" width="38" height="30"/>
+  <circle id="pumpL1body" class="body" cx="650" cy="712" r="12"/>
+  <g id="pumpL1imp"><path d="M650,704 l5,13 h-10 z" fill="#c9a8f0"/></g>
+  <text class="kkstxt" x="608" y="736">MEX18 AP001</text>
+</g>
+<g class="comp" data-id="MEX19AP001">
+  <rect class="hitbox" x="692" y="698" width="38" height="30"/>
+  <circle id="pumpL2body" class="body" cx="710" cy="712" r="12"/>
+  <g id="pumpL2imp"><path d="M710,704 l5,13 h-10 z" fill="#c9a8f0"/></g>
+  <text class="kkstxt" x="696" y="736">MEX19 AP001</text>
+</g>
+<g class="comp" data-id="MEX18AA301"><rect class="hitbox" x="622" y="668" width="20" height="18"/><path d="M632,671 l6,8 h-12 z" fill="none" stroke="#c98" stroke-width="1.2"/><text class="kkstxt" x="600" y="666">AA301</text></g>
+<g class="comp" data-id="MEX19AA301"><rect class="hitbox" x="726" y="668" width="20" height="18"/><path d="M736,671 l6,8 h-12 z" fill="none" stroke="#c98" stroke-width="1.2"/><text class="kkstxt" x="744" y="682">AA301</text></g>
+<g class="comp" data-id="MEX10LEAKTANK">
+  <rect class="hitbox" x="616" y="736" width="128" height="78"/>
+  <rect class="body2" x="620" y="740" width="120" height="70" rx="5"/>
+  <rect id="leakOil" x="623" y="780" width="114" height="27" fill="#5b3f7a" rx="3"/>
+  <text class="lbl" x="632" y="756" fill="#9fb4d4">LEAKAGE TANK</text>
+</g>
+<g class="comp" data-id="MEX18CL102"><rect class="hitbox" x="744" y="748" width="60" height="16"/><rect id="lampCL102L" class="body" x="746" y="750" width="10" height="10"/><text class="kkstxt" x="760" y="759">CL102 hi-hi</text></g>
+
+<!-- ======== WICKET GATE CONTROL BLOCK MEX20  EL 245.0 ======== -->
+<rect class="blkbox" x="250" y="240" width="170" height="150" rx="6"/>
+<text class="blkttl" x="256" y="252">WICKET GATE CONTROL · MEX20</text>
+<g class="comp" data-id="MEX20AT001">
+  <rect class="hitbox" x="282" y="204" width="38" height="34"/>
+  <path d="M292,220 l9,-11 9,11 -9,11 z" class="body"/>
+  <path d="M301,220 l9,-11 9,11 -9,11 z" class="body"/>
+  <text class="kkstxt" x="322" y="214">AT001 dual filter</text>
+</g>
+<g class="comp" data-id="MEX20AA001">
+  <rect class="hitbox" x="326" y="258" width="48" height="26"/>
+  <rect id="wgPilot" class="body" x="330" y="261" width="40" height="20" rx="2"/>
+  <line x1="334" y1="265" x2="366" y2="277" stroke="#9fb4d4"/>
+  <text class="kkstxt" x="376" y="274">AA001 pilot</text>
+</g>
+<g class="comp" data-id="MEX20AA002">
+  <rect class="hitbox" x="306" y="288" width="90" height="42"/>
+  <rect class="body" x="310" y="292" width="80" height="34" rx="2"/>
+  <line x1="336" y1="292" x2="336" y2="326" stroke="#49608a"/>
+  <line x1="363" y1="292" x2="363" y2="326" stroke="#49608a"/>
+  <rect id="wgSpool" x="338" y="296" width="24" height="26" fill="#3c5a85"/>
+  <text class="kkstxt" x="308" y="340">AA002 main stage 4/3</text>
+</g>
+<g class="comp" data-id="MEX20AA701">
+  <rect class="hitbox" x="336" y="344" width="30" height="24"/>
+  <path d="M344,348 q6,7 0,14 M360,348 q-6,7 0,14" fill="none" stroke="#c9a84a" stroke-width="1.5"/>
+  <text class="kkstxt" x="368" y="360">AA701</text>
+</g>
+<g class="comp" data-id="MEX20AA003">
+  <rect class="hitbox" x="644" y="284" width="34" height="44"/>
+  <path d="M652,296 l10,7 -10,7 z M652,314 l10,7 -10,7 z" fill="none" stroke="#c98" stroke-width="1.4"/>
+  <text class="kkstxt" x="612" y="292">AA003-006 ✓×4</text>
+</g>
+
+<!-- ======== EMERGENCY SHUTDOWN BLOCK MEX70 ======== -->
+<rect class="blkbox" x="470" y="240" width="170" height="150" rx="6"/>
+<text class="blkttl" x="476" y="252">EMERGENCY SHUTDOWN · MEX70</text>
+<g class="comp" data-id="MEX70AA001"><rect class="hitbox" x="481" y="253" width="34" height="28"/><rect id="sol70a" class="body" x="485" y="257" width="26" height="20" rx="2"/><line x1="489" y1="262" x2="507" y2="272" stroke="#9fb4d4"/><text class="kkstxt" x="482" y="290">AA001</text></g>
+<g class="comp" data-id="MEX70AA002"><rect class="hitbox" x="521" y="253" width="34" height="28"/><rect id="sol70b" class="body" x="525" y="257" width="26" height="20" rx="2"/><line x1="529" y1="262" x2="547" y2="272" stroke="#9fb4d4"/><text class="kkstxt" x="524" y="290">AA002</text></g>
+<g class="comp" data-id="MEX70AA003"><rect class="hitbox" x="481" y="296" width="44" height="34"/><rect id="hv70" class="body" x="485" y="300" width="36" height="26" rx="2"/><text class="lbl" x="491" y="317" fill="#9fb4d4">HV</text><text class="kkstxt" x="482" y="338">AA003</text></g>
+<g class="comp" data-id="MEX70AA010"><rect class="hitbox" x="596" y="291" width="36" height="30"/><rect id="cart10" class="body" x="600" y="295" width="28" height="22" rx="2"/><text class="lbl" x="604" y="310" fill="#9fb4d4">C1</text><text class="kkstxt" x="596" y="290">AA010</text></g>
+<g class="comp" data-id="MEX70AA012"><rect class="hitbox" x="596" y="326" width="36" height="30"/><rect id="cart12" class="body" x="600" y="330" width="28" height="22" rx="2"/><text class="lbl" x="604" y="345" fill="#9fb4d4">C2</text><text class="kkstxt" x="632" y="345">AA012</text></g>
+<g class="comp" data-id="MEX70AA005"><rect class="hitbox" x="541" y="341" width="44" height="34"/><rect id="hv70ru" class="body" x="545" y="345" width="36" height="26" rx="2"/><text class="lbl" x="549" y="362" fill="#9fb4d4">HV-RU</text><text class="kkstxt" x="541" y="384">AA005</text></g>
+
+<!-- ======== RUNNER BLADE CONTROL BLOCK MEX30 ======== -->
+<rect class="blkbox" x="680" y="240" width="170" height="150" rx="6"/>
+<text class="blkttl" x="686" y="252">RUNNER BLADE CONTROL · MEX30</text>
+<g class="comp" data-id="MEX30AA001">
+  <rect class="hitbox" x="706" y="258" width="48" height="26"/>
+  <rect id="ruPilot" class="body" x="710" y="261" width="40" height="20" rx="2"/>
+  <line x1="714" y1="265" x2="746" y2="277" stroke="#9fb4d4"/>
+  <text class="kkstxt" x="756" y="274">AA001 pilot</text>
+</g>
+<g class="comp" data-id="MEX30AA002">
+  <rect class="hitbox" x="696" y="288" width="90" height="42"/>
+  <rect class="body" x="700" y="292" width="80" height="34" rx="2"/>
+  <line x1="726" y1="292" x2="726" y2="326" stroke="#49608a"/>
+  <line x1="753" y1="292" x2="753" y2="326" stroke="#49608a"/>
+  <rect id="ruSpool" x="728" y="296" width="24" height="26" fill="#3c5a85"/>
+  <text class="kkstxt" x="698" y="340">AA002 main stage 4/3</text>
+</g>
+<g class="comp" data-id="MEX30AA003"><rect class="hitbox" x="790" y="288" width="24" height="24"/><path d="M796,294 l10,6 -10,6 z" fill="none" stroke="#c98" stroke-width="1.4"/><text class="kkstxt" x="788" y="286">AA003 ✓</text></g>
+<g class="comp" data-id="MEX30AA701"><rect class="hitbox" x="820" y="288" width="26" height="24"/><path d="M826,293 q5,7 0,13 M840,293 q-5,7 0,13" fill="none" stroke="#c9a84a" stroke-width="1.4"/><text class="kkstxt" x="818" y="322">AA701</text></g>
+<g class="comp" data-id="MEX30AA702"><rect class="hitbox" x="820" y="330" width="26" height="24"/><path d="M826,335 q5,7 0,13 M840,335 q-5,7 0,13" fill="none" stroke="#c9a84a" stroke-width="1.4"/><text class="kkstxt" x="818" y="366">AA702</text></g>
+
+<!-- hub replenishing line valves -->
+<g class="comp" data-id="MEX30AA501"><rect class="hitbox" x="850" y="228" width="30" height="26"/><path d="M857,234 l16,12 m0,-12 l-16,12" stroke="#8fb4e8" stroke-width="1.6" fill="none"/><text class="kkstxt" x="884" y="246">AA501 iso</text></g>
+<g class="comp" data-id="MEX30AA004"><rect class="hitbox" x="850" y="276" width="30" height="26"/><rect id="solHub" class="body" x="853" y="279" width="24" height="20" rx="2"/><line x1="857" y1="284" x2="873" y2="294" stroke="#9fb4d4"/><text class="kkstxt" x="884" y="292">AA004 sol</text></g>
+<g class="comp" data-id="MEX30AA602"><rect class="hitbox" x="888" y="278" width="26" height="26"/><path d="M894,284 l14,10 m0,-10 l-14,10" stroke="#c9a84a" stroke-width="1.4" fill="none"/><text class="kkstxt" x="912" y="296">AA602 byp</text></g>
+<g class="comp" data-id="MEX30AA502"><rect class="hitbox" x="850" y="324" width="30" height="26"/><path d="M857,330 l16,12 m0,-12 l-16,12" stroke="#8fb4e8" stroke-width="1.6" fill="none"/><text class="kkstxt" x="884" y="340">AA502 iso</text></g>
+
+<!-- ======== TURBINE  EL 235.5 ======== -->
+<text class="blkttl" x="900" y="232">TURBINE · WICKET GATES + RUNNER</text>
+<ellipse cx="1000" cy="430" rx="165" ry="215" fill="none" stroke="#22314c" stroke-dasharray="4 6"/>
+<g class="comp" data-id="WGSERVO">
+  <rect class="hitbox" x="876" y="276" width="108" height="48"/>
+  <rect class="body2" x="880" y="280" width="100" height="40" rx="4"/>
+  <rect id="wgPiston" x="886" y="283" width="9" height="34" fill="#dbe6f5"/>
+  <line id="wgRod" x1="895" y1="300" x2="1039" y2="300" stroke="#9fb4d4" stroke-width="4"/>
+  <text class="kkstxt" x="878" y="334">WG SERVOMOTOR</text>
+</g>
+<g class="comp" data-id="GATERING">
+  <rect class="hitbox" x="1036" y="250" width="100" height="100"/>
+  <circle cx="1085" cy="300" r="46" fill="none" stroke="#49608a" stroke-width="2"/>
+  <circle cx="1085" cy="300" r="14" class="body2"/>
+  <g id="gateVanes"></g>
+  <text class="kkstxt" x="1048" y="362">WICKET GATES</text>
+</g>
+<path id="wf1" class="pipe thin" d="M1060,242 V358" style="stroke:#1d3b52"/>
+<path id="wf2" class="pipe thin" d="M1110,242 V358" style="stroke:#1d3b52"/>
+
+<!-- oil head + shaft + runner -->
+<g class="comp" data-id="OILHEAD">
+  <rect class="hitbox" x="851" y="494" width="48" height="50"/>
+  <rect class="body" x="855" y="498" width="40" height="42" rx="3"/>
+  <line x1="862" y1="498" x2="862" y2="540" stroke="#49608a"/>
+  <line x1="888" y1="498" x2="888" y2="540" stroke="#49608a"/>
+  <text class="kkstxt" x="838" y="554">OIL HEAD (rotating)</text>
+</g>
+<rect class="body2" x="895" y="512" width="121" height="16"/>
+<g class="comp" data-id="MEA70AA201">
+  <rect class="hitbox" x="928" y="476" width="48" height="34"/>
+  <rect id="ospdBody" class="body" x="932" y="480" width="40" height="26" rx="3"/>
+  <circle cx="944" cy="493" r="4" fill="#9fb4d4"/><circle cx="960" cy="493" r="4" fill="#9fb4d4"/>
+  <line x1="952" y1="506" x2="952" y2="512" stroke="#5b7194" stroke-width="2"/>
+  <text class="kkstxt" x="906" y="474">MEA70 AA201 OVERSPEED</text>
+</g>
+<g class="comp" data-id="MEA70CG201"><rect class="hitbox" x="976" y="480" width="18" height="18"/><circle id="cg201" class="body" cx="985" cy="489" r="6"/><text class="kkstxt" x="996" y="493">CG201</text></g>
+<g class="comp" data-id="RUNNER">
+  <rect class="hitbox" x="1012" y="452" width="136" height="136"/>
+  <circle cx="1080" cy="520" r="64" fill="none" stroke="#49608a" stroke-width="2.5"/>
+  <g id="runnerBlades"></g>
+  <circle cx="1080" cy="520" r="20" class="body"/>
+  <text class="kkstxt" x="1046" y="600">RUNNER (blade pitch)</text>
+</g>
+<path id="wf3" class="pipe thin" d="M1055,462 V578" style="stroke:#1d3b52"/>
+<path id="wf4" class="pipe thin" d="M1105,462 V578" style="stroke:#1d3b52"/>
+
+<!-- hub oil tank -->
+<g class="comp" data-id="MEX30BB001">
+  <rect class="hitbox" x="686" y="466" width="78" height="68"/>
+  <rect class="body2" x="690" y="470" width="70" height="60" rx="5"/>
+  <rect id="hubOil" x="693" y="495" width="64" height="32" fill="#7a4a1d" rx="3"/>
+  <text class="kkstxt" x="688" y="464">MEX30 BB001 HUB OIL TANK</text>
+</g>
+<g class="comp" data-id="MEX30CL103"><rect class="hitbox" x="700" y="534" width="60" height="16"/><rect id="lampCL103H" class="body" x="702" y="536" width="10" height="10"/><text class="kkstxt" x="716" y="545">CL103 lo-lo</text></g>
+<g class="comp" data-id="MEX30BP001"><rect class="hitbox" x="712" y="548" width="28" height="22"/><path d="M719,552 q5,7 0,13 M733,552 q-5,7 0,13" fill="none" stroke="#c9a84a" stroke-width="1.4"/><text class="kkstxt" x="742" y="564">BP001</text></g>
+<text class="lbl" x="925" y="592" fill="#8a6fb0">leakage ▼</text>
+
+<!-- legend -->
+<g transform="translate(950,30)">
+  <rect class="blkbox" x="0" y="0" width="222" height="118"/>
+  <text class="blkttl" x="8" y="14">LEGEND — oil / media colours</text>
+  <line x1="10" y1="26" x2="34" y2="26" stroke="#ff8c3a" stroke-width="3"/><text class="lbl" x="40" y="29">pressure oil 63 bar</text>
+  <line x1="10" y1="40" x2="34" y2="40" stroke="#ffd23f" stroke-width="3"/><text class="lbl" x="40" y="43">control oil → servomotors</text>
+  <line x1="10" y1="54" x2="34" y2="54" stroke="#4da3ff" stroke-width="3"/><text class="lbl" x="40" y="57">drain / return oil</text>
+  <line x1="10" y1="68" x2="34" y2="68" stroke="#b07cff" stroke-width="3"/><text class="lbl" x="40" y="71">leakage oil</text>
+  <line x1="10" y1="82" x2="34" y2="82" stroke="#3ce0d0" stroke-width="3"/><text class="lbl" x="40" y="85">cooling oil / water</text>
+  <line x1="10" y1="96" x2="34" y2="96" stroke="#59d97e" stroke-width="3"/><text class="lbl" x="40" y="99">nitrogen N₂</text>
+  <line x1="120" y1="96" x2="144" y2="96" stroke="#ff5c5c" stroke-width="2" stroke-dasharray="4 3"/><text class="lbl" x="150" y="99">trip signal</text>
+</g>
+</svg>
+</div>
+<div id="tip"><b>ℹ</b><span id="tipTxt">Hover any component for its KKS code · click pumps / solenoids / valves to switch them. Start Oil Pump 1, then open the wicket gates.</span></div>
+</div>
+
+<!-- ================= CONTROL PANEL ================= -->
+<div id="panel">
+  <div class="sect">
+    <div class="gauges">
+      <div class="gauge"><svg viewBox="0 0 120 74"><path d="M12,66 A50,50 0 0 1 108,66" fill="none" stroke="#22314c" stroke-width="9"/><path id="gPressArc" d="M12,66 A50,50 0 0 1 108,66" fill="none" stroke="#ff8c3a" stroke-width="9" stroke-dasharray="151" stroke-dashoffset="151"/><line id="gPressN" x1="60" y1="66" x2="18" y2="66" stroke="#fff" stroke-width="2.5" transform="rotate(0 60 66)"/><circle cx="60" cy="66" r="4" fill="#fff"/></svg><div class="gv" id="gPressV">0.0 bar</div><div class="gl">SYSTEM PRESSURE</div></div>
+      <div class="gauge"><svg viewBox="0 0 120 74"><path d="M12,66 A50,50 0 0 1 108,66" fill="none" stroke="#22314c" stroke-width="9"/><path id="gSpdArc" d="M12,66 A50,50 0 0 1 108,66" fill="none" stroke="#3fd68f" stroke-width="9" stroke-dasharray="151" stroke-dashoffset="151"/><line id="gSpdN" x1="60" y1="66" x2="18" y2="66" stroke="#fff" stroke-width="2.5" transform="rotate(0 60 66)"/><circle cx="60" cy="66" r="4" fill="#fff"/></svg><div class="gv" id="gSpdV">0 %</div><div class="gl">TURBINE SPEED n</div></div>
+    </div>
+    <button id="esdBtn">⬤ EMERGENCY SHUTDOWN — ESD</button>
+    <button id="resetBtn" class="btn">RESET TRIP / RE-ARM SOLENOIDS MEX70 AA001+AA002</button>
+  </div>
+
+  <div class="sect"><h2>Oil pressure supply · MEX11 / MEX12 / MEX16 / MEX17</h2>
+    <div class="row"><label>Oil pump 1 <span class="kks">MEX11 AP001</span></label><div class="tgl3" id="p1mode"><button class="btn" data-v="off">OFF</button><button class="btn" data-v="on">ON</button><button class="btn sel" data-v="auto">AUTO</button></div></div>
+    <div class="row"><label>Oil pump 2 <span class="kks">MEX12 AP001</span></label><div class="tgl3" id="p2mode"><button class="btn" data-v="off">OFF</button><button class="btn" data-v="on">ON</button><button class="btn sel" data-v="auto">AUTO</button></div></div>
+    <div class="row"><label>Unloader 1 <span class="kks">MEX11 AA001</span></label><button class="btn" id="btnUnl1">—</button></div>
+    <div class="row"><label>Unloader 2 <span class="kks">MEX12 AA001</span></label><button class="btn" id="btnUnl2">—</button></div>
+    <div class="row"><label>Accumulator charge <span class="kks">MEX16/17 BB001</span></label><div class="bar oil"><i id="barAcc"></i></div><span class="val" id="valAcc">0 %</span></div>
+  </div>
+
+  <div class="sect"><h2>Governor · wicket gates & runner blades</h2>
+    <div class="row"><label>WG opening setpoint <span class="kks">MEX20 AA001/002</span></label></div>
+    <div class="row"><input type="range" id="wgSet" min="0" max="100" value="0"><span class="val" id="wgSetV">0 %</span></div>
+    <div class="row"><label>WG actual position</label><div class="bar grn"><i id="barWG"></i></div><span class="val" id="valWG">0 %</span></div>
+    <div class="row"><label>Runner blade mode <span class="kks">MEX30</span></label><div class="tgl3" id="ruModeT"><button class="btn sel" data-v="auto">CAM/AUTO</button><button class="btn" data-v="man">MANUAL</button></div></div>
+    <div class="row"><input type="range" id="ruSet" min="0" max="100" value="0" disabled><span class="val" id="ruSetV">0 %</span></div>
+    <div class="row"><label>Blade actual (−10°…+25°)</label><div class="bar grn"><i id="barRU"></i></div><span class="val" id="valRU">−10°</span></div>
+    <div class="row"><label>Governor speed control (breaker open)</label><button class="btn" id="btnGov">OFF</button></div>
+  </div>
+
+  <div class="sect"><h2>Unit / grid</h2>
+    <div class="row"><label>Generator breaker</label><button class="btn" id="btnBrk">OPEN</button></div>
+    <div class="row"><label>Simulate full load rejection</label><button class="btn" id="btnRej">TRIGGER</button></div>
+    <div class="row"><label>Electrical overspeed trip 115% <i>(disable to demo mechanical backup)</i></label><button class="btn on" id="btnEtrip">ENABLED</button></div>
+  </div>
+
+  <div class="sect"><h2>Emergency shutdown · MEX70</h2>
+    <div class="row"><label>ESD solenoid 1 <span class="kks">MEX70 AA001</span></label><span class="val" id="stSol70a">—</span></div>
+    <div class="row"><label>ESD solenoid 2 <span class="kks">MEX70 AA002</span></label><span class="val" id="stSol70b">—</span></div>
+    <div class="row"><label>Cartridge valves <span class="kks">AA010 / AA012</span></label><span class="val" id="stCart">—</span></div>
+    <div class="row"><label>Trip cause</label><span class="val" id="stCause" style="min-width:120px">—</span></div>
+  </div>
+
+  <div class="sect"><h2>Runner hub oil · MEX30</h2>
+    <div class="row"><label>Replenish solenoid <span class="kks">MEX30 AA004</span></label><button class="btn" id="btnHubSol">CLOSED</button></div>
+    <div class="row"><label>Isolating valves <span class="kks">AA501 / AA502</span></label><button class="btn" id="btnIso1">AA501</button><button class="btn" id="btnIso2">AA502</button></div>
+    <div class="row"><label>Bypass <span class="kks">AA602</span></label><button class="btn" id="btnByp">CLOSED</button></div>
+    <div class="row"><label>Hub tank level <span class="kks">BB001</span></label><div class="bar oil"><i id="barHub"></i></div><span class="val" id="valHub">0 %</span></div>
+  </div>
+
+  <div class="sect"><h2>Cooling · MEX14</h2>
+    <div class="row"><label>Cooling pump <span class="kks">MEX14 AP001</span></label><button class="btn" id="btnCool">OFF</button></div>
+    <div class="row"><label>Cooling water valve <span class="kks">MEX14 AA001</span></label><button class="btn" id="btnCW">CLOSED</button></div>
+    <div class="row"><label>Oil temperature</label><div class="bar"><i id="barTemp"></i></div><span class="val" id="valTemp">35 °C</span></div>
+  </div>
+
+  <div class="sect"><h2>Leakage oil · MEX18 / MEX19</h2>
+    <div class="row"><label>Leakage pump 1 <span class="kks">MEX18 AP001</span></label><div class="tgl3" id="lp1mode"><button class="btn" data-v="off">OFF</button><button class="btn" data-v="on">ON</button><button class="btn sel" data-v="auto">AUTO</button></div></div>
+    <div class="row"><label>Leakage pump 2 <span class="kks">MEX19 AP001</span></label><div class="tgl3" id="lp2mode"><button class="btn" data-v="off">OFF</button><button class="btn" data-v="on">ON</button><button class="btn sel" data-v="auto">AUTO</button></div></div>
+    <div class="row"><label>Leakage tank level</label><div class="bar prp"><i id="barLeak"></i></div><span class="val" id="valLeak">0 %</span></div>
+    <div class="row"><label>Sump tank level <span class="kks">MEX10</span></label><div class="bar oil"><i id="barSump"></i></div><span class="val" id="valSump">0 %</span></div>
+  </div>
+
+  <div class="sect"><h2>Alarms & protection</h2>
+    <div class="lamps">
+      <div class="lamp wn" id="alCP101"><i></i>MEX16 CP101 press LOW</div>
+      <div class="lamp" id="alCP102"><i></i>MEX16 CP102 press TOO LOW</div>
+      <div class="lamp wn" id="alCL101"><i></i>MEX10 CL101 sump HIGH</div>
+      <div class="lamp wn" id="alCL102"><i></i>MEX10 CL102 sump LOW</div>
+      <div class="lamp" id="alCL103"><i></i>MEX10 CL103 sump TOO LOW</div>
+      <div class="lamp" id="alLK102"><i></i>MEX18 CL102 leak tank HIGH</div>
+      <div class="lamp" id="alHUB"><i></i>MEX30 CL103 hub oil LOW</div>
+      <div class="lamp wn" id="alTEMP"><i></i>Oil temperature HIGH</div>
+      <div class="lamp" id="alOSPD-E"><i></i>Overspeed ELEC 115%</div>
+      <div class="lamp" id="alOSPD-M"><i></i>MEA70 AA201 MECH 140%</div>
+    </div>
+  </div>
+
+  <div class="sect"><h2>Event log</h2><div id="log"></div></div>
+</div>
+</div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>v<a?a:(v>b?b:v);
+const C={OIL:'#ff8c3a',CTL:'#ffd23f',DRN:'#4da3ff',LEAK:'#b07cff',COOL:'#3ce0d0',WAT:'#41b0ff',N2:'#59d97e',SIG:'#ff5c5c'};
+
+/* ---------- component registry (tooltips) ---------- */
+const REG={
+MEX16BB001:['MEX16 BB001','Piston accumulator 1','Stores pressure oil (63 bar) for the servomotors. Nitrogen on top of the piston keeps the energy reserve — enough oil for emergency closing even with both pumps dead.'],
+MEX17BB001:['MEX17 BB001','Piston accumulator 2','Second piston accumulator — redundancy for accumulator 1.'],
+MEX16BBN2:['MEX16 BB002-010','Nitrogen bottles ×9','N₂ gas cushion for accumulator 1 piston.'],
+MEX17BBN2:['MEX17 BB002-010','Nitrogen bottles ×9','N₂ gas cushion for accumulator 2 piston.'],
+MEX16AA301:['MEX16 AA301','Oil safety valve acc.1','Relieves oil over-pressure of accumulator 1.'],
+MEX16AA302:['MEX16 AA302','Air safety valve acc.1','Relieves N₂ over-pressure of accumulator 1.'],
+MEX17AA301:['MEX17 AA301','Oil safety valve acc.2','Relieves oil over-pressure of accumulator 2.'],
+MEX17AA302:['MEX17 AA302','Air safety valve acc.2','Relieves N₂ over-pressure of accumulator 2.'],
+MEX16CP101:['MEX16 CP101','Pressure switch — LOW','Alarm when system pressure < 52 bar (starts standby pump).'],
+MEX16CP102:['MEX16 CP102','Pressure switch — TOO LOW','< 45 bar: pressure no longer guarantees safe closing → unit trip.'],
+MEX11AP001:['MEX11 AP001','Oil pump 1 (motor M01)','Main screw pump. CLICK to cycle OFF → ON → AUTO.'],
+MEX12AP001:['MEX12 AP001','Oil pump 2 (motor M01)','Standby screw pump, cuts in at lower pressure. CLICK to cycle mode.'],
+MEX11AA001:['MEX11 AA001','Pump 1 unloader solenoid','De-energized = pump recirculates to sump at no pressure (soft start / standby). CLICK to toggle.'],
+MEX12AA001:['MEX12 AA001','Pump 2 unloader solenoid','CLICK to toggle load/unload.'],
+MEX11AA301:['MEX11 AA301','Pump 1 relief valve','Mechanical protection against over-pressure.'],
+MEX12AA301:['MEX12 AA301','Pump 2 relief valve','Mechanical protection against over-pressure.'],
+MEX14AP001:['MEX14 AP001','Oil cooling pump (M01)','Circulates sump oil through the cooler. CLICK to start/stop.'],
+MEX14AC001:['MEX14 AC001','Oil cooler','Oil/water heat exchanger.'],
+MEX14AA001:['MEX14 AA001','Cooling water solenoid','Opens raw water through the cooler. CLICK to open/close.'],
+MEX14AA301:['MEX14 AA301','Cooling pump safety valve',''],
+MEX10TANK:['MEX10','Oil sump tank','Main reservoir; all drains and leakage return here.'],
+MEX10CL101:['MEX10 CL101','Sump level HIGH switch',''],
+MEX10CL102:['MEX10 CL102','Sump level LOW switch',''],
+MEX10CL103:['MEX10 CL103','Sump level TOO LOW switch','Pump protection — trip.'],
+MEX18AP001:['MEX18 AP001','Leakage oil pump 1 (M01)','Returns collected leakage to the sump. CLICK to cycle mode.'],
+MEX19AP001:['MEX19 AP001','Leakage oil pump 2 (M01)','Redundant leakage pump. CLICK to cycle mode.'],
+MEX18AA301:['MEX18 AA301','Leak pump 1 safety valve',''],
+MEX19AA301:['MEX19 AA301','Leak pump 2 safety valve',''],
+MEX10LEAKTANK:['MEX18','Leakage oil tank','Collects servomotor / oil-head seal leakage.'],
+MEX18CL102:['MEX18 CL102','Leak tank level TOO HIGH',''],
+MEX20AT001:['MEX20 AT001','Dual filter, governor control oil','Twin change-over filter protecting the proportional valves.'],
+MEX20AA001:['MEX20 AA001','WG proportional valve — pilot','Electrical governor command → hydraulic pilot pressure.'],
+MEX20AA002:['MEX20 AA002','WG proportional valve — main stage','4/3 valve directing pressure oil to open/close side of WG servomotor.'],
+MEX20AA701:['MEX20 AA701','Throttle — WG opening time','Sets wicket-gate opening time (~28 s).'],
+MEX20AA003:['MEX20 AA003-006','ESD check valves ×4','Let emergency closing oil bypass the proportional valve main stage.'],
+MEX70AA001:['MEX70 AA001','ESD solenoid 1','Energized = armed. De-energize (CLICK) → emergency shutdown. Fail-safe.'],
+MEX70AA002:['MEX70 AA002','ESD solenoid 2','Redundant ESD solenoid — either one dropping trips the unit. CLICK to test.'],
+MEX70AA003:['MEX70 AA003','ESD hydraulic valve','Pilot-operated stage between solenoids and cartridge valves.'],
+MEX70AA010:['MEX70 AA010','ESD cartridge valve 1','Large-bore valve passing accumulator oil straight to WG close side.'],
+MEX70AA012:['MEX70 AA012','ESD cartridge valve 2','Redundant cartridge valve.'],
+MEX70AA005:['MEX70 AA005','Hydraulic valve — RU on ESD','Drives runner blades closed during emergency shutdown.'],
+MEX30AA001:['MEX30 AA001','RU proportional valve — pilot',''],
+MEX30AA002:['MEX30 AA002','RU proportional valve — main stage','Directs oil via the oil head to the runner-blade servomotor in the hub.'],
+MEX30AA003:['MEX30 AA003','Check valve RU control',''],
+MEX30AA701:['MEX30 AA701','Throttle — RU opening time',''],
+MEX30AA702:['MEX30 AA702','Throttle — RU closing time',''],
+MEX30AA501:['MEX30 AA501','Isolating valve — hub replenishing','CLICK to open/close.'],
+MEX30AA502:['MEX30 AA502','Isolating valve — hub replenishing','CLICK to open/close.'],
+MEX30AA602:['MEX30 AA602','Bypass valve — hub replenishing','Manual bypass around solenoid AA004. CLICK to open/close.'],
+MEX30AA004:['MEX30 AA004','Solenoid — hub tank replenishing','Tops up the runner hub oil tank from the pressure header. CLICK to open/close.'],
+MEX30BB001:['MEX30 BB001','Runner hub oil tank','Oil volume inside the hub for blade servomotor & sealing.'],
+MEX30CL103:['MEX30 CL103','Hub oil level TOO LOW switch',''],
+MEX30BP001:['MEX30 BP001','Throttle — hub tank',''],
+WGSERVO:['MEX20','Wicket gate servomotor','Double-acting cylinder rotating the distributor ring — the 8 wicket gates.'],
+GATERING:['—','Wicket gates (distributor)','Regulate water flow → turbine power. Closed tangential ring when shut.'],
+OILHEAD:['MEX30','Oil head / rotating distributor','Transfers open/close oil from the stationary piping into the rotating shaft.'],
+MEA70AA201:['MEA70 AA201','Mechanical overspeed device','Flyweight bolt on the shaft, trips at 140 % speed even with no electricity. CLICK = manual test trip.'],
+MEA70CG201:['MEA70 CG201','Overspeed device position switch','Signals the tripped position of MEA70 AA201.'],
+RUNNER:['—','Kaplan runner','Blade pitch (−10°…+25°) set hydraulically through the hub servomotor.']
+};
+
+/* ---------- state ---------- */
+const S={p1:'auto',p2:'auto',run1:false,run2:false,ld1:false,ld2:false,mUnl1:false,mUnl2:false,
+ acc:0,press:0,temp:35,
+ wgSet:0,wg:0,wgGov:0,gov:false,ruMode:'auto',ruSet:0,ru:0,
+ brk:false,spd:0,esd:false,cause:'—',sol70a:true,sol70b:true,etripEn:true,ospdE:false,ospdM:false,
+ hub:78,hubSol:false,iso1:true,iso2:true,byp:false,
+ cool:false,cw:false,
+ lp1:'auto',lp2:'auto',lp1run:false,lp2run:false,lp1l:false,lp2l:false,leak:25,sump:84,
+ rotP1:0,rotP2:0,rotC:0,rotL1:0,rotL2:0,rotR:0,p2latch:false};
+
+function logEv(m,cls){const d=document.createElement('div');if(cls)d.className=cls;
+ const t=new Date().toLocaleTimeString();d.textContent=t+'  '+m;
+ const L=$('log');L.prepend(d);while(L.children.length>80)L.lastChild.remove();}
+
+/* ---------- flow overlays ---------- */
+const FLOW={};
+document.querySelectorAll('#pipes .pipe').forEach(p=>{
+  const c=p.cloneNode();c.removeAttribute('class');
+  c.setAttribute('class','flow off'+(p.classList.contains('thin')?' thin':''));
+  c.id='f_'+p.id;p.parentNode.appendChild(c);FLOW[p.id]=c;});
+function setFlow(id,on,col,rev){const f=FLOW[id];if(!f)return;
+  f.classList.toggle('off',!on);f.classList.toggle('rev',!!rev);if(col)f.style.stroke=col;}
+</script>
+<script>
+"use strict";
+/* ---------- build N2 racks, gate vanes, runner blades ---------- */
+(function(){
+  [['n2rack16',165],['n2rack17',345]].forEach(([gid,x0])=>{const g=$(gid);
+    for(let i=0;i<9;i++){const r=document.createElementNS('http://www.w3.org/2000/svg','rect');
+      r.setAttribute('x',x0+i*10);r.setAttribute('y',50);r.setAttribute('width',7);r.setAttribute('height',40);
+      r.setAttribute('rx',3);r.setAttribute('fill','#16233a');r.setAttribute('stroke','#59d97e');r.setAttribute('stroke-width','1.1');
+      g.appendChild(r);}});
+})();
+const vanes=[];
+(function(){const g=$('gateVanes');
+  for(let i=0;i<8;i++){const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('stroke','#8fb4e8');l.setAttribute('stroke-width','4');l.setAttribute('stroke-linecap','round');
+    g.appendChild(l);vanes.push(l);}})();
+const blades=[];
+(function(){const g=$('runnerBlades');
+  for(let i=0;i<4;i++){const e=document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+    e.setAttribute('cx',1080);e.setAttribute('cy',482);e.setAttribute('ry',30);e.setAttribute('rx',8);
+    e.setAttribute('fill','#27436b');e.setAttribute('stroke','#6f93c9');e.setAttribute('stroke-width','1.5');
+    g.appendChild(e);blades.push(e);}})();
+
+/* ---------- trip / reset ---------- */
+function trip(cause){if(S.esd)return;S.esd=true;S.cause=cause;S.sol70a=false;S.sol70b=false;
+  if(S.brk){S.brk=false;logEv('Generator breaker OPENED by protection','a');}
+  logEv('*** EMERGENCY SHUTDOWN — '+cause+' ***','a');
+  logEv('MEX70 AA001/AA002 de-energized → cartridge valves AA010/AA012 open → fast close','a');}
+function resetTrip(){
+  if(!S.esd&&S.sol70a&&S.sol70b){logEv('Nothing to reset');return;}
+  if(S.wg>1||S.spd>10){logEv('RESET BLOCKED — wait until wicket gates closed and speed < 10 %','e');return;}
+  S.esd=false;S.cause='—';S.sol70a=true;S.sol70b=true;S.ospdE=false;S.ospdM=false;
+  S.wgSet=0;$('wgSet').value=0;S.wgGov=0;
+  logEv('Trip reset — ESD solenoids re-energized, unit armed','g');}
+
+/* ---------- UI wiring ---------- */
+function wireTgl(id,key,names){document.querySelectorAll('#'+id+' .btn').forEach(b=>{
+  b.onclick=()=>{S[key]=b.dataset.v;
+    document.querySelectorAll('#'+id+' .btn').forEach(x=>x.classList.toggle('sel',x===b));
+    logEv((names||id)+' → '+b.dataset.v.toUpperCase());};});}
+wireTgl('p1mode','p1','Oil pump 1 MEX11 AP001');
+wireTgl('p2mode','p2','Oil pump 2 MEX12 AP001');
+wireTgl('lp1mode','lp1','Leakage pump 1 MEX18 AP001');
+wireTgl('lp2mode','lp2','Leakage pump 2 MEX19 AP001');
+document.querySelectorAll('#ruModeT .btn').forEach(b=>{b.onclick=()=>{S.ruMode=b.dataset.v;
+  document.querySelectorAll('#ruModeT .btn').forEach(x=>x.classList.toggle('sel',x===b));
+  $('ruSet').disabled=S.ruMode!=='man';
+  logEv('Runner blade control → '+(S.ruMode==='auto'?'CAM (combinator, follows WG)':'MANUAL'));};});
+$('wgSet').oninput=e=>{S.wgSet=+e.target.value;$('wgSetV').textContent=S.wgSet+' %';};
+$('ruSet').oninput=e=>{S.ruSet=+e.target.value;$('ruSetV').textContent=S.ruSet+' %';};
+$('esdBtn').onclick=()=>trip('MANUAL ESD PUSHBUTTON');
+$('resetBtn').onclick=resetTrip;
+$('btnUnl1').onclick=()=>{S.mUnl1=!S.mUnl1;logEv('Pump 1 unloader MEX11 AA001 '+(S.mUnl1?'FORCED UNLOAD':'AUTO/LOADED'));};
+$('btnUnl2').onclick=()=>{S.mUnl2=!S.mUnl2;logEv('Pump 2 unloader MEX12 AA001 '+(S.mUnl2?'FORCED UNLOAD':'AUTO/LOADED'));};
+$('btnGov').onclick=()=>{S.gov=!S.gov;S.wgGov=S.wg;logEv('Governor speed control '+(S.gov?'ON — holds 100 % speed with breaker open':'OFF'));};
+$('btnBrk').onclick=()=>{
+  if(S.brk){S.brk=false;logEv('Generator breaker OPENED by operator','e');return;}
+  if(S.esd){logEv('Cannot close breaker — unit tripped','e');return;}
+  if(S.spd<95||S.spd>105){logEv('SYNC CHECK FAILED — speed must be 95…105 % to close breaker (now '+S.spd.toFixed(0)+' %)','e');return;}
+  S.brk=true;logEv('Generator breaker CLOSED — unit on grid','g');};
+$('btnRej').onclick=()=>{if(!S.brk){logEv('Load rejection needs the breaker closed first','e');return;}
+  S.brk=false;logEv('*** FULL LOAD REJECTION — breaker opened at load, watch the speed! ***','a');};
+$('btnEtrip').onclick=()=>{S.etripEn=!S.etripEn;const b=$('btnEtrip');
+  b.classList.toggle('on',S.etripEn);b.classList.toggle('offst',!S.etripEn);
+  b.textContent=S.etripEn?'ENABLED':'DISABLED';
+  logEv('Electrical overspeed trip (115 %) '+(S.etripEn?'ENABLED':'DISABLED — mechanical MEA70 AA201 (140 %) is now the only protection!'),S.etripEn?'g':'e');};
+$('btnHubSol').onclick=()=>{S.hubSol=!S.hubSol;logEv('Hub replenish solenoid MEX30 AA004 '+(S.hubSol?'OPEN':'CLOSED'));};
+$('btnIso1').onclick=()=>{S.iso1=!S.iso1;logEv('Isolating valve MEX30 AA501 '+(S.iso1?'OPEN':'CLOSED'));};
+$('btnIso2').onclick=()=>{S.iso2=!S.iso2;logEv('Isolating valve MEX30 AA502 '+(S.iso2?'OPEN':'CLOSED'));};
+$('btnByp').onclick=()=>{S.byp=!S.byp;logEv('Bypass valve MEX30 AA602 '+(S.byp?'OPEN':'CLOSED'));};
+$('btnCool').onclick=()=>{S.cool=!S.cool;logEv('Cooling pump MEX14 AP001 '+(S.cool?'STARTED':'STOPPED'));};
+$('btnCW').onclick=()=>{S.cw=!S.cw;logEv('Cooling water solenoid MEX14 AA001 '+(S.cw?'OPEN':'CLOSED'));};
+
+/* clicks on the schematic */
+const cycle={off:'on',on:'auto',auto:'off'};
+const CLICK={
+ MEX11AP001:()=>{S.p1=cycle[S.p1];syncTgl('p1mode',S.p1);logEv('Oil pump 1 mode → '+S.p1.toUpperCase());},
+ MEX12AP001:()=>{S.p2=cycle[S.p2];syncTgl('p2mode',S.p2);logEv('Oil pump 2 mode → '+S.p2.toUpperCase());},
+ MEX18AP001:()=>{S.lp1=cycle[S.lp1];syncTgl('lp1mode',S.lp1);logEv('Leak pump 1 mode → '+S.lp1.toUpperCase());},
+ MEX19AP001:()=>{S.lp2=cycle[S.lp2];syncTgl('lp2mode',S.lp2);logEv('Leak pump 2 mode → '+S.lp2.toUpperCase());},
+ MEX11AA001:()=>$('btnUnl1').onclick(),MEX12AA001:()=>$('btnUnl2').onclick(),
+ MEX14AP001:()=>$('btnCool').onclick(),MEX14AA001:()=>$('btnCW').onclick(),
+ MEX30AA004:()=>$('btnHubSol').onclick(),MEX30AA501:()=>$('btnIso1').onclick(),
+ MEX30AA502:()=>$('btnIso2').onclick(),MEX30AA602:()=>$('btnByp').onclick(),
+ MEX70AA001:()=>{if(S.sol70a){S.sol70a=false;trip('SOLENOID MEX70 AA001 DE-ENERGIZED (test)');}else logEv('Re-arm via RESET button','e');},
+ MEX70AA002:()=>{if(S.sol70b){S.sol70b=false;trip('SOLENOID MEX70 AA002 DE-ENERGIZED (test)');}else logEv('Re-arm via RESET button','e');},
+ MEA70AA201:()=>{S.ospdM=true;trip('MECHANICAL OVERSPEED DEVICE MEA70 AA201 (manual test)');}
+};
+function syncTgl(id,v){document.querySelectorAll('#'+id+' .btn').forEach(x=>x.classList.toggle('sel',x.dataset.v===v));}
+document.querySelectorAll('.comp').forEach(g=>{
+  const id=g.dataset.id;
+  g.addEventListener('click',()=>{if(CLICK[id])CLICK[id]();});
+  g.addEventListener('mouseenter',()=>{const r=REG[id];if(!r)return;
+    $('tipTxt').innerHTML='<b>'+r[0]+'</b> — '+r[1]+'. <span style="color:#8296b3">'+r[2]+'</span>';});
+  g.addEventListener('mouseleave',()=>{$('tipTxt').textContent='Hover any component for its KKS code · click pumps / solenoids / valves to switch them.';});
+});
+</script>
+<script>
+"use strict";
+/* ================= SIMULATION LOOP ================= */
+const DT=0.06;
+let alarmMem={};
+function alarm(id,on,msg){const el=$(id);if(!el)return;
+  if(on&&!alarmMem[id]){logEv('ALARM: '+msg,'a');alarmMem[id]=true;}
+  if(!on)alarmMem[id]=false;
+  el.classList.toggle('on',on);}
+
+function tick(){
+  /* ---- pumps & pressure ---- */
+  if(S.p1==='on')S.run1=true;else if(S.p1==='off')S.run1=false;
+  else S.run1=(S.press<58)||(S.run1&&S.acc<99.5);
+  if(S.p2==='on')S.run2=true;else if(S.p2==='off')S.run2=false;
+  else{if(S.press<52)S.p2latch=true;if(S.acc>99.5)S.p2latch=false;S.run2=S.p2latch;}
+  S.ld1=S.run1&&!S.mUnl1&&S.acc<99.8;
+  S.ld2=S.run2&&!S.mUnl2&&S.acc<99.8;
+  const charge=(S.ld1?3.0:0)+(S.ld2?3.0:0);
+
+  /* ---- servomotor motion (opening needs full control pressure, closing works down to 8 bar) ---- */
+  let wgT=S.esd?0:(S.gov&&!S.brk?S.wgGov:S.wgSet);
+  if(S.gov&&!S.brk&&!S.esd){S.wgGov=clamp(S.wgGov+(100-S.spd)*0.028*DT*10,0,100);wgT=S.wgGov;}
+  const wgRate=S.esd?100/8:(wgT>S.wg?100/28:100/22);
+  const wg0=S.wg;
+  if(Math.abs(wgT-S.wg)>0.05){
+    const dir=Math.sign(wgT-S.wg);
+    if((dir>0&&S.press>=50)||(dir<0&&S.press>=8))
+      S.wg=clamp(S.wg+dir*wgRate*DT,0,100);
+  }
+  if(wgT>S.wg+0.5&&S.press<50&&!S.permLog){
+    logEv('INTERLOCK: control pressure < 50 bar — wicket gates blocked. Charge the accumulators first (MEX16 CP101).','e');S.permLog=true;}
+  if(S.press>=50)S.permLog=false;
+  const dwg=S.wg-wg0;
+
+  let ruT=S.esd?0:(S.ruMode==='auto'?(S.wg<15?0:clamp((S.wg-15)*1.4,0,100)):S.ruSet);
+  const ru0=S.ru;
+  if(Math.abs(ruT-S.ru)>0.05){
+    const dir=Math.sign(ruT-S.ru);
+    if((dir>0&&S.press>=45)||(dir<0&&S.press>=8))
+      S.ru=clamp(S.ru+dir*(S.esd?100/10:100/20)*DT,0,100);
+  }
+  const dru=S.ru-ru0;
+
+  /* ---- hub replenishing ---- */
+  const repl=S.press>40&&S.iso1&&S.iso2&&(S.hubSol||S.byp);
+  const replRate=repl?(S.hubSol?1.1:0.35):0;
+  S.hub=clamp(S.hub+replRate*DT*10-(0.006+Math.abs(dru)*0.6)*DT*10,0,100);
+
+  /* ---- accumulators (rates in %/s) ---- */
+  const useRate=(S.press>5?0.08:0)+Math.abs(dwg)/DT*0.09+Math.abs(dru)/DT*0.05+(repl?0.5:0);
+  S.acc=clamp(S.acc+(charge-useRate)*DT,0,100);
+  S.press=S.acc<=2?S.acc*10:20+43*S.acc/100;
+
+  /* ---- speed ---- */
+  let spdT;
+  if(S.brk)spdT=100;
+  else if(S.wg>3)spdT=100+58*(S.wg/100)*(0.45+0.55*S.ru/100);
+  else spdT=0;
+  const tau=S.brk?2.5:(spdT>S.spd?4:(S.wg>3?12:30));
+  S.spd+=(spdT-S.spd)*DT/tau;
+  S.spd=clamp(S.spd,0,170);
+
+  /* ---- protections ---- */
+  if(S.spd>=115&&S.etripEn&&!S.ospdE){S.ospdE=true;trip('ELECTRICAL OVERSPEED 115 %');}
+  if(S.spd>=140&&!S.ospdM){S.ospdM=true;trip('MECHANICAL OVERSPEED DEVICE MEA70 AA201 — 140 %');}
+  if(S.press<45&&S.wg>5&&!S.esd)trip('PRESSURE TOO LOW — MEX16 CP102');
+  if(!S.sol70a||!S.sol70b)S.esd=true;
+
+  /* ---- cooling / temperature ---- */
+  const heat=(S.ld1?0.10:0)+(S.ld2?0.10:0)+(S.spd>5?0.03:0);
+  const coolQ=(S.cool&&S.cw)?0.22:(S.cool?0.05:0);
+  S.temp=clamp(S.temp+(heat-coolQ+(35-S.temp)*0.008)*DT*10,20,90);
+
+  /* ---- leakage & sump ---- */
+  S.leak=clamp(S.leak+((S.press>30?0.05:0.008)+(S.esd&&S.wg>1?0.1:0))*DT*10,0,100);
+  [['lp1','lp1run','lp1l'],['lp2','lp2run','lp2l']].forEach(([m,r,l])=>{
+    if(S[m]==='on')S[r]=true;else if(S[m]==='off')S[r]=false;
+    else{if(S.leak>70)S[l]=true;if(S.leak<20)S[l]=false;S[r]=S[l];}
+    if(S[r])S.leak=clamp(S.leak-2.0*DT*10/10,0,100);});
+  S.sump=clamp(86-S.acc*0.22-S.leak*0.08-(S.hub-78)*0.05,0,100);
+
+  /* rotation angles */
+  if(S.run1)S.rotP1+=520*DT;if(S.run2)S.rotP2+=520*DT;if(S.cool)S.rotC+=420*DT;
+  if(S.lp1run)S.rotL1+=460*DT;if(S.lp2run)S.rotL2+=460*DT;
+  S.rotR+=S.spd*2.2*DT;
+
+  render(wgT,ruT,dwg,dru,repl);
+}
+
+/* ================= RENDER ================= */
+function rot(el,a,cx,cy){el.setAttribute('transform','rotate('+a+' '+cx+' '+cy+')');}
+function render(wgT,ruT,dwg,dru,repl){
+  /* pumps */
+  $('pump1body').classList.toggle('runY',S.run1);rot($('pump1imp'),S.rotP1,170,620);
+  $('pump2body').classList.toggle('runY',S.run2);rot($('pump2imp'),S.rotP2,240,620);
+  $('pumpCbody').classList.toggle('runY',S.cool);rot($('pumpCimp'),S.rotC,360,620);
+  $('pumpL1body').classList.toggle('runY',S.lp1run);rot($('pumpL1imp'),S.rotL1,650,712);
+  $('pumpL2body').classList.toggle('runY',S.lp2run);rot($('pumpL2imp'),S.rotL2,710,712);
+  $('sol11').classList.toggle('energ',S.ld1);$('sol12').classList.toggle('energ',S.ld2);
+  $('solCW').classList.toggle('energ',S.cw);$('solHub').classList.toggle('energ',S.hubSol);
+  $('sol70a').classList.toggle('energ',S.sol70a);$('sol70a').classList.toggle('tripR',!S.sol70a);
+  $('sol70b').classList.toggle('energ',S.sol70b);$('sol70b').classList.toggle('tripR',!S.sol70b);
+  $('cart10').classList.toggle('tripR',S.esd);$('cart12').classList.toggle('tripR',S.esd);
+  $('hv70').classList.toggle('tripR',S.esd);$('hv70ru').classList.toggle('tripR',S.esd);
+  $('ospdBody').classList.toggle('tripR',S.ospdM);
+  $('cg201').classList.toggle('tripR',S.ospdM);
+  $('wgPilot').classList.toggle('energ',Math.abs(wgT-S.wg)>0.5&&!S.esd);
+  $('ruPilot').classList.toggle('energ',Math.abs(ruT-S.ru)>0.5&&!S.esd);
+  $('wgSpool').setAttribute('x',350-12+(wgT>S.wg+0.3?9:(wgT<S.wg-0.3?-9:0)));
+  $('ruSpool').setAttribute('x',740-12+(ruT>S.ru+0.3?9:(ruT<S.ru-0.3?-9:0)));
+
+  /* accumulators */
+  [['acc16oil','acc16pist',112],['acc17oil','acc17pist',292]].forEach(([o,p,x])=>{
+    const h=Math.max(2,86*S.acc/100),y=148-h;
+    $(o).setAttribute('y',y);$(o).setAttribute('height',h);
+    $(p).setAttribute('y1',y-2);$(p).setAttribute('y2',y-2);});
+
+  /* servo & gates */
+  const px=886+(S.wg/100)*82;
+  $('wgPiston').setAttribute('x',px);
+  $('wgRod').setAttribute('x1',px+9);
+  const open=S.wg/100;
+  vanes.forEach((l,i)=>{const a=i*Math.PI/4,px2=1085+32*Math.cos(a),py=300+32*Math.sin(a);
+    const va=a+Math.PI/2-open*1.1;
+    l.setAttribute('x1',px2-11*Math.cos(va));l.setAttribute('y1',py-11*Math.sin(va));
+    l.setAttribute('x2',px2+11*Math.cos(va));l.setAttribute('y2',py+11*Math.sin(va));});
+  blades.forEach((e,i)=>{e.setAttribute('rx',4+9*S.ru/100);
+    e.setAttribute('transform','rotate('+(S.rotR+i*90)+' 1080 520)');});
+
+  /* tanks */
+  const sh=104*S.sump/100;$('sumpOil').setAttribute('y',807-sh);$('sumpOil').setAttribute('height',Math.max(1,sh));
+  const lh=64*S.leak/100;$('leakOil').setAttribute('y',807-lh);$('leakOil').setAttribute('height',Math.max(1,lh));
+  const hh=54*S.hub/100;$('hubOil').setAttribute('y',527-hh);$('hubOil').setAttribute('height',Math.max(1,hh));
+
+  /* ---- flows ---- */
+  const sup=S.ld1||S.ld2, prs=S.press>25;
+  const wgMv=Math.abs(dwg)>0.001, ruMv=Math.abs(dru)>0.001;
+  const consume=wgMv||ruMv||repl||(S.esd&&S.wg>0.5);
+  setFlow('pSuc1',S.run1,C.OIL);setFlow('pDis1',S.ld1,C.OIL);
+  setFlow('pSuc2',S.run2,C.OIL);setFlow('pDis2',S.ld2,C.OIL,true);
+  setFlow('pRiser',sup,C.OIL,true);
+  setFlow('pRel1',S.run1&&!S.ld1,C.DRN);setFlow('pRel2',S.run2&&!S.ld2,C.DRN);
+  setFlow('pHdr',prs&&(sup||consume),C.OIL);
+  setFlow('pAcc16',sup&&S.acc<99.5||consume&&!sup,C.OIL,sup&&S.acc<99.5);
+  setFlow('pAcc17',sup&&S.acc<99.5||consume&&!sup,C.OIL,sup&&S.acc<99.5);
+  setFlow('pN2a',(sup||consume)&&prs,C.N2,!(sup&&S.acc<99.5));
+  setFlow('pN2b',(sup||consume)&&prs,C.N2,!(sup&&S.acc<99.5));
+  setFlow('pHdrWG',prs&&(wgMv&&!S.esd),C.OIL);
+  setFlow('pHdrESD',S.esd&&S.press>8&&S.wg>0.5,C.SIG);
+  setFlow('pHdrRU',prs&&ruMv&&!S.esd,C.OIL);
+  setFlow('pHdrRepl',repl,C.OIL);
+  setFlow('pByp',repl&&S.byp,C.OIL);
+  setFlow('pWGopen',wgMv||S.esd&&S.wg>0.5,C.CTL,dwg<0||S.esd);
+  setFlow('pWGclose',wgMv&&!S.esd,C.CTL,dwg>0);
+  setFlow('pESDtoWG',S.esd&&S.press>8&&S.wg>0.5,C.SIG);
+  setFlow('pESDtoRU',S.esd&&S.press>8&&S.ru>0.5,C.SIG);
+  setFlow('pRUopen',ruMv,C.CTL,dru<0);
+  setFlow('pRUclose',ruMv,C.CTL,dru>0);
+  setFlow('pShaftO',ruMv,C.CTL,dru<0);
+  setFlow('pShaftC',ruMv,C.CTL,dru>0);
+  setFlow('pHub',ruMv||repl,C.OIL,ruMv&&dru<0);
+  setFlow('pDrnWG',wgMv&&!S.esd,C.DRN);
+  setFlow('pDrnESD',S.esd&&S.wg>0.5,C.DRN);
+  setFlow('pDrnRU',ruMv,C.DRN);
+  setFlow('pDrnHdr',wgMv||ruMv||S.esd&&S.wg>0.5,C.DRN);
+  setFlow('pCoolS',S.cool,C.COOL);setFlow('pCoolD',S.cool,C.COOL);setFlow('pCoolR',S.cool,C.COOL);
+  setFlow('wWaterIn',S.cw,C.WAT);setFlow('wWaterThru',S.cw,C.WAT);
+  setFlow('pLeakIn',prs,C.LEAK);
+  setFlow('pLkS1',S.lp1run,C.LEAK);setFlow('pLeak1',S.lp1run,C.LEAK);
+  setFlow('pLkS2',S.lp2run,C.LEAK);setFlow('pLeak2',S.lp2run,C.LEAK);
+  setFlow('pLeakHdr',S.lp1run||S.lp2run,C.LEAK);
+  setFlow('sPil1',S.sol70a&&prs,C.CTL);setFlow('sPil2',S.sol70b&&prs,C.CTL);
+  setFlow('sPil3',S.esd&&S.press>8,C.SIG);setFlow('sPil4',S.esd&&S.press>8,C.SIG);
+  setFlow('sOspd',S.ospdM||S.ospdE,C.SIG);
+  /* water through gates & runner */
+  const wOn=S.wg>3;
+  [['wf1',wOn],['wf2',wOn],['wf3',wOn&&S.spd>3],['wf4',wOn&&S.spd>3]].forEach(([id,on])=>{
+    const el=$(id);el.classList.toggle('flow',on);el.classList.toggle('pipe',!on);
+    el.style.stroke=on?C.WAT:'#1d3b52';el.style.opacity=on?0.35+0.65*S.wg/100:1;});
+
+  /* ---- gauges / bars / chips ---- */
+  $('gPressArc').setAttribute('stroke-dashoffset',151*(1-clamp(S.press,0,80)/80));
+  rot($('gPressN'),clamp(S.press,0,80)/80*180,60,66);
+  $('gPressV').textContent=S.press.toFixed(1)+' bar';
+  $('gSpdArc').setAttribute('stroke-dashoffset',151*(1-clamp(S.spd,0,160)/160));
+  $('gSpdArc').setAttribute('stroke',S.spd>115?'#ff4d4d':(S.spd>105?'#ffb020':'#3fd68f'));
+  rot($('gSpdN'),clamp(S.spd,0,160)/160*180,60,66);
+  $('gSpdV').textContent=S.spd.toFixed(0)+' %';
+  $('barAcc').style.width=S.acc+'%';$('valAcc').textContent=S.acc.toFixed(0)+' %';
+  $('barWG').style.width=S.wg+'%';$('valWG').textContent=S.wg.toFixed(0)+' %';
+  $('barRU').style.width=S.ru+'%';$('valRU').textContent=(-10+35*S.ru/100).toFixed(1)+'°';
+  $('barHub').style.width=S.hub+'%';$('valHub').textContent=S.hub.toFixed(0)+' %';
+  $('barTemp').style.width=clamp((S.temp-20)/60*100,0,100)+'%';$('valTemp').textContent=S.temp.toFixed(1)+' °C';
+  $('barLeak').style.width=S.leak+'%';$('valLeak').textContent=S.leak.toFixed(0)+' %';
+  $('barSump').style.width=S.sump+'%';$('valSump').textContent=S.sump.toFixed(0)+' %';
+  $('wgSetV').textContent=S.wgSet+' %';
+  $('btnUnl1').textContent=S.run1?(S.ld1?'LOADED':'UNLOADED'):'—';
+  $('btnUnl1').classList.toggle('on',S.ld1);
+  $('btnUnl2').textContent=S.run2?(S.ld2?'LOADED':'UNLOADED'):'—';
+  $('btnUnl2').classList.toggle('on',S.ld2);
+  $('btnGov').textContent=S.gov?'ON':'OFF';$('btnGov').classList.toggle('on',S.gov);
+  $('btnBrk').textContent=S.brk?'CLOSED (on grid)':'OPEN';$('btnBrk').classList.toggle('on',S.brk);
+  $('btnHubSol').textContent=S.hubSol?'OPEN':'CLOSED';$('btnHubSol').classList.toggle('on',S.hubSol);
+  $('btnIso1').classList.toggle('on',S.iso1);$('btnIso2').classList.toggle('on',S.iso2);
+  $('btnByp').textContent=S.byp?'OPEN':'CLOSED';$('btnByp').classList.toggle('on',S.byp);
+  $('btnCool').textContent=S.cool?'RUNNING':'OFF';$('btnCool').classList.toggle('on',S.cool);
+  $('btnCW').textContent=S.cw?'OPEN':'CLOSED';$('btnCW').classList.toggle('on',S.cw);
+  $('esdBtn').classList.toggle('active',S.esd);
+  $('stSol70a').textContent=S.sol70a?'ENERGIZED ⚡':'DE-ENERGIZED';
+  $('stSol70b').textContent=S.sol70b?'ENERGIZED ⚡':'DE-ENERGIZED';
+  $('stCart').textContent=S.esd?'OPEN — dumping':'closed';
+  $('stCause').textContent=S.cause;
+  const chip=$('chipUnit');
+  if(S.esd){chip.textContent='UNIT TRIPPED — ESD';chip.className='statusChip trip';}
+  else if(S.brk){chip.textContent='ON GRID · '+S.wg.toFixed(0)+' % load';chip.className='statusChip run';}
+  else if(S.spd>5){chip.textContent='RUNNING NO-LOAD';chip.className='statusChip run';}
+  else{chip.textContent='UNIT STOPPED';chip.className='statusChip';}
+  $('chipPress').textContent=S.press.toFixed(1)+' bar';
+  $('chipSpeed').textContent=S.spd.toFixed(0)+' % n';
+
+  /* ---- alarms ---- */
+  alarm('alCP101',S.press<52&&S.press>1,'MEX16 CP101 — system pressure LOW (<52 bar)');
+  alarm('alCP102',S.press<45&&S.acc>0.5,'MEX16 CP102 — pressure TOO LOW (<45 bar)');
+  alarm('alCL101',S.sump>90,'MEX10 CL101 — sump level HIGH');
+  alarm('alCL102',S.sump<56&&S.sump>48,'MEX10 CL102 — sump level LOW');
+  alarm('alCL103',S.sump<=48,'MEX10 CL103 — sump level TOO LOW');
+  alarm('alLK102',S.leak>85,'MEX18 CL102 — leakage tank TOO HIGH');
+  alarm('alHUB',S.hub<20,'MEX30 CL103 — hub oil tank level TOO LOW');
+  alarm('alTEMP',S.temp>55,'Oil temperature HIGH — start cooling MEX14');
+  alarm('alOSPD-E',S.ospdE,'ELECTRICAL OVERSPEED 115 %');
+  alarm('alOSPD-M',S.ospdM,'MECHANICAL OVERSPEED MEA70 AA201 — 140 %');
+  $('lampCL101').classList.toggle('tripR',S.sump>90);
+  $('lampCL102').classList.toggle('tripR',S.sump<56);
+  $('lampCL103').classList.toggle('tripR',S.sump<=48);
+  $('lampCL102L').classList.toggle('tripR',S.leak>85);
+  $('lampCL103H').classList.toggle('tripR',S.hub<20);
+}
+
+logEv('Simulator ready. Suggested lesson: 1) put Oil pump 1 in ON — watch it charge the accumulators','g');
+logEv('2) open wicket gates with the slider · 3) close breaker at ~100 % speed · 4) try LOAD REJECTION or the red ESD button','g');
+setInterval(tick,60);
+</script>
+</body>
+</html>
