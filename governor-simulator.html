@@ -443,7 +443,7 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
   <div class="sect">
     <div class="gauges">
       <div class="gauge"><svg viewBox="0 0 120 74"><path d="M12,66 A50,50 0 0 1 108,66" fill="none" stroke="#22314c" stroke-width="9"/><path id="gPressArc" d="M12,66 A50,50 0 0 1 108,66" fill="none" stroke="#ff8c3a" stroke-width="9" stroke-dasharray="151" stroke-dashoffset="151"/><line id="gPressN" x1="60" y1="66" x2="18" y2="66" stroke="#fff" stroke-width="2.5" transform="rotate(0 60 66)"/><circle cx="60" cy="66" r="4" fill="#fff"/></svg><div class="gv" id="gPressV">0.0 bar</div><div class="gl">SYSTEM PRESSURE</div></div>
-      <div class="gauge"><svg viewBox="0 0 120 74"><path d="M12,66 A50,50 0 0 1 108,66" fill="none" stroke="#22314c" stroke-width="9"/><path id="gSpdArc" d="M12,66 A50,50 0 0 1 108,66" fill="none" stroke="#3fd68f" stroke-width="9" stroke-dasharray="151" stroke-dashoffset="151"/><line id="gSpdN" x1="60" y1="66" x2="18" y2="66" stroke="#fff" stroke-width="2.5" transform="rotate(0 60 66)"/><circle cx="60" cy="66" r="4" fill="#fff"/></svg><div class="gv" id="gSpdV">0 %</div><div class="gl">TURBINE SPEED n</div></div>
+      <div class="gauge"><svg viewBox="0 0 120 74"><path d="M12,66 A50,50 0 0 1 108,66" fill="none" stroke="#22314c" stroke-width="9"/><path id="gSpdArc" d="M12,66 A50,50 0 0 1 108,66" fill="none" stroke="#3fd68f" stroke-width="9" stroke-dasharray="151" stroke-dashoffset="151"/><line id="gSpdN" x1="60" y1="66" x2="18" y2="66" stroke="#fff" stroke-width="2.5" transform="rotate(0 60 66)"/><circle cx="60" cy="66" r="4" fill="#fff"/></svg><div class="gv" id="gSpdV">0 RPM</div><div class="gl">SPEED · 100 nom / 165 MAX</div></div>
     </div>
     <button id="esdBtn">⬤ EMERGENCY SHUTDOWN — ESD</button>
     <button id="resetBtn" class="btn">RESET TRIP / RE-ARM SOLENOIDS MEX70 AA001+AA002</button>
@@ -457,6 +457,7 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
       <button class="btn" data-l="rej">4 · Load rejection / overspeed</button>
       <button class="btn" data-l="repl">5 · Hub oil replenishing</button>
       <button class="btn" data-l="cool">6 · Oil cooling circuit</button>
+      <button class="btn" data-l="runaway">7 · Flood runaway &gt;165 RPM</button>
     </div>
     <button class="btn" id="lessonStop" style="width:100%">■ STOP LESSON</button>
     <div id="lessonTxt">Pick a lesson — each one operates the real switching sequence step by step and explains which valves move and where the oil flows.</div>
@@ -471,19 +472,23 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
   </div>
 
   <div class="sect"><h2>Governor · wicket gates & runner blades</h2>
-    <div class="row"><label>WG opening setpoint <span class="kks">MEX20 AA001/002</span></label></div>
-    <div class="row"><input type="range" id="wgSet" min="0" max="100" value="0"><span class="val" id="wgSetV">0 %</span></div>
-    <div class="row"><label>WG actual position</label><div class="bar grn"><i id="barWG"></i></div><span class="val" id="valWG">0 %</span></div>
+    <div class="row"><label>WG opening setpoint 0–90° <span class="kks">MEX20 AA001/002</span></label></div>
+    <div class="row"><input type="range" id="wgSet" min="0" max="90" step="0.5" value="0"><span class="val" id="wgSetV">0°</span></div>
+    <div class="row"><label>WG actual angle</label><div class="bar grn"><i id="barWG"></i></div><span class="val" id="valWG">0°</span></div>
+    <div class="row"><label>Optimum angle for max output at this head <i>(40° @ 10 m)</i></label><span class="val" id="optV">40.0°</span></div>
+    <div class="row"><label>Generator output</label><span class="val" id="mwV">0.0 MW</span></div>
     <div class="row"><label>Runner blade mode <span class="kks">MEX30</span></label><div class="tgl3" id="ruModeT"><button class="btn sel" data-v="auto">CAM/AUTO</button><button class="btn" data-v="man">MANUAL</button></div></div>
     <div class="row"><input type="range" id="ruSet" min="0" max="100" value="0" disabled><span class="val" id="ruSetV">0 %</span></div>
     <div class="row"><label>Blade actual (−10°…+25°)</label><div class="bar grn"><i id="barRU"></i></div><span class="val" id="valRU">−10°</span></div>
     <div class="row"><label>Governor speed control (breaker open)</label><button class="btn" id="btnGov">OFF</button></div>
   </div>
 
-  <div class="sect"><h2>Unit / grid</h2>
+  <div class="sect"><h2>Unit / grid / water head</h2>
+    <div class="row"><label>Water head H — raise it to simulate a flood</label></div>
+    <div class="row"><input type="range" id="headSet" min="4" max="16" step="0.5" value="10"><span class="val" id="headV">10.0 m</span></div>
     <div class="row"><label>Generator breaker</label><button class="btn" id="btnBrk">OPEN</button></div>
     <div class="row"><label>Simulate full load rejection</label><button class="btn" id="btnRej">TRIGGER</button></div>
-    <div class="row"><label>Electrical overspeed trip 115% <i>(disable to demo mechanical backup)</i></label><button class="btn on" id="btnEtrip">ENABLED</button></div>
+    <div class="row"><label>Electrical overspeed trip 115 RPM <i>(disable to demo mechanical backup)</i></label><button class="btn on" id="btnEtrip">ENABLED</button></div>
   </div>
 
   <div class="sect"><h2>Emergency shutdown · MEX70</h2>
@@ -523,8 +528,9 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
       <div class="lamp" id="alLK102"><i></i>MEX18 CL102 leak tank HIGH</div>
       <div class="lamp" id="alHUB"><i></i>MEX30 CL103 hub oil LOW</div>
       <div class="lamp wn" id="alTEMP"><i></i>Oil temperature HIGH</div>
-      <div class="lamp" id="alOSPD-E"><i></i>Overspeed ELEC 115%</div>
-      <div class="lamp" id="alOSPD-M"><i></i>MEA70 AA201 MECH 140%</div>
+      <div class="lamp" id="alOSPD-E"><i></i>Overspeed ELEC 115 RPM</div>
+      <div class="lamp" id="alOSPD-M"><i></i>MEA70 AA201 MECH 140 RPM</div>
+      <div class="lamp" id="alRUN"><i></i>RUNAWAY &gt;165 RPM — gates 90°</div>
     </div>
   </div>
 
@@ -594,9 +600,9 @@ MEX30BB001:['MEX30 BB001','Runner hub oil tank','Oil volume inside the hub for b
 MEX30CL103:['MEX30 CL103','Hub oil level TOO LOW switch',''],
 MEX30BP001:['MEX30 BP001','Throttle — hub tank',''],
 WGSERVO:['MEX20','Wicket gate servomotor','Double-acting cylinder rotating the distributor ring — the 8 wicket gates.'],
-GATERING:['—','Wicket gates (distributor)','Regulate water flow → turbine power. Closed tangential ring when shut.'],
+GATERING:['—','Wicket gates (distributor)','Regulate water flow → turbine power. 0–90° opening; ~40° gives maximum output at 10 m head (optimum shifts with head). Forced to 90° on runaway >165 RPM.'],
 OILHEAD:['MEX30','Oil head / rotating distributor','Transfers open/close oil from the stationary piping into the rotating shaft.'],
-MEA70AA201:['MEA70 AA201','Mechanical overspeed device','Flyweight bolt on the shaft, trips at 140 % speed even with no electricity. CLICK = manual test trip.'],
+MEA70AA201:['MEA70 AA201','Mechanical overspeed device','Flyweight bolt on the shaft, trips at 140 RPM even with no electricity. Above 165 RPM the runaway logic takes over and OPENS the gates instead. CLICK = manual test trip.'],
 MEA70CG201:['MEA70 CG201','Overspeed device position switch','Signals the tripped position of MEA70 AA201.'],
 RUNNER:['—','Kaplan runner','Blade pitch (−10°…+25°) set hydraulically through the hub servomotor.']
 };
@@ -606,6 +612,7 @@ const S={p1:'auto',p2:'auto',run1:false,run2:false,ld1:false,ld2:false,mUnl1:fal
  acc:0,press:0,temp:35,
  wgSet:0,wg:0,wgGov:0,gov:false,ruMode:'auto',ruSet:0,ru:0,
  brk:false,spd:0,esd:false,cause:'—',sol70a:true,sol70b:true,etripEn:true,ospdE:false,ospdM:false,
+ head:10,runaway:false,mw:0,
  hub:78,hubSol:false,iso1:true,iso2:true,byp:false,
  cool:false,cw:false,
  lp1:'auto',lp2:'auto',lp1run:false,lp2run:false,lp1l:false,lp2l:false,leak:25,sump:84,
@@ -652,8 +659,12 @@ function trip(cause){if(S.esd)return;S.esd=true;S.cause=cause;S.sol70a=false;S.s
   logEv('*** EMERGENCY SHUTDOWN — '+cause+' ***','a');
   logEv('MEX70 AA001/AA002 de-energized → cartridge valves AA010/AA012 open → fast close','a');}
 function resetTrip(){
+  if(S.runaway){
+    if(S.head>11){logEv('RESET BLOCKED — flood still high (head '+S.head.toFixed(1)+' m > 11 m). Gates stay at 90° until the water recedes — closing now would break the blades.','e');return;}
+    S.runaway=false;S.runawayBlock=true;S.cause='post-runaway shutdown';
+    logEv('Flood receded — runaway condition cleared. Gates closing at emergency rate; press RESET again once the unit is stopped.','g');return;}
   if(!S.esd&&S.sol70a&&S.sol70b){logEv('Nothing to reset');return;}
-  if(S.wg>1||S.spd>10){logEv('RESET BLOCKED — wait until wicket gates closed and speed < 10 %','e');return;}
+  if(S.wg>1||S.spd>10){logEv('RESET BLOCKED — wait until wicket gates closed and speed < 10 RPM','e');return;}
   S.esd=false;S.cause='—';S.sol70a=true;S.sol70b=true;S.ospdE=false;S.ospdM=false;
   S.wgSet=0;$('wgSet').value=0;S.wgGov=0;
   logEv('Trip reset — ESD solenoids re-energized, unit armed','g');}
@@ -671,24 +682,25 @@ document.querySelectorAll('#ruModeT .btn').forEach(b=>{b.onclick=()=>{S.ruMode=b
   document.querySelectorAll('#ruModeT .btn').forEach(x=>x.classList.toggle('sel',x===b));
   $('ruSet').disabled=S.ruMode!=='man';
   logEv('Runner blade control → '+(S.ruMode==='auto'?'CAM (combinator, follows WG)':'MANUAL'));};});
-$('wgSet').oninput=e=>{S.wgSet=+e.target.value;$('wgSetV').textContent=S.wgSet+' %';};
+$('wgSet').oninput=e=>{S.wgSet=(+e.target.value)/0.9;$('wgSetV').textContent=(+e.target.value).toFixed(1)+'°';};
+$('headSet').oninput=e=>{S.head=+e.target.value;$('headV').textContent=S.head.toFixed(1)+' m';};
 $('ruSet').oninput=e=>{S.ruSet=+e.target.value;$('ruSetV').textContent=S.ruSet+' %';};
 $('esdBtn').onclick=()=>trip('MANUAL ESD PUSHBUTTON');
 $('resetBtn').onclick=resetTrip;
 $('btnUnl1').onclick=()=>{S.mUnl1=!S.mUnl1;logEv('Pump 1 unloader MEX11 AA001 '+(S.mUnl1?'FORCED UNLOAD':'AUTO/LOADED'));};
 $('btnUnl2').onclick=()=>{S.mUnl2=!S.mUnl2;logEv('Pump 2 unloader MEX12 AA001 '+(S.mUnl2?'FORCED UNLOAD':'AUTO/LOADED'));};
-$('btnGov').onclick=()=>{S.gov=!S.gov;S.wgGov=S.wg;logEv('Governor speed control '+(S.gov?'ON — holds 100 % speed with breaker open':'OFF'));};
+$('btnGov').onclick=()=>{S.gov=!S.gov;S.wgGov=S.wg;logEv('Governor speed control '+(S.gov?'ON — holds 100 RPM with breaker open':'OFF'));};
 $('btnBrk').onclick=()=>{
   if(S.brk){S.brk=false;logEv('Generator breaker OPENED by operator','e');return;}
   if(S.esd){logEv('Cannot close breaker — unit tripped','e');return;}
-  if(S.spd<95||S.spd>105){logEv('SYNC CHECK FAILED — speed must be 95…105 % to close breaker (now '+S.spd.toFixed(0)+' %)','e');return;}
+  if(S.spd<95||S.spd>105){logEv('SYNC CHECK FAILED — speed must be 95…105 RPM to close breaker (now '+S.spd.toFixed(0)+' RPM)','e');return;}
   S.brk=true;logEv('Generator breaker CLOSED — unit on grid','g');};
 $('btnRej').onclick=()=>{if(!S.brk){logEv('Load rejection needs the breaker closed first','e');return;}
   S.brk=false;logEv('*** FULL LOAD REJECTION — breaker opened at load, watch the speed! ***','a');};
 $('btnEtrip').onclick=()=>{S.etripEn=!S.etripEn;const b=$('btnEtrip');
   b.classList.toggle('on',S.etripEn);b.classList.toggle('offst',!S.etripEn);
   b.textContent=S.etripEn?'ENABLED':'DISABLED';
-  logEv('Electrical overspeed trip (115 %) '+(S.etripEn?'ENABLED':'DISABLED — mechanical MEA70 AA201 (140 %) is now the only protection!'),S.etripEn?'g':'e');};
+  logEv('Electrical overspeed trip (115 RPM) '+(S.etripEn?'ENABLED':'DISABLED — mechanical MEA70 AA201 (140 RPM) is now the only protection!'),S.etripEn?'g':'e');};
 $('btnHubSol').onclick=()=>{S.hubSol=!S.hubSol;logEv('Hub replenish solenoid MEX30 AA004 '+(S.hubSol?'OPEN':'CLOSED'));};
 $('btnIso1').onclick=()=>{S.iso1=!S.iso1;logEv('Isolating valve MEX30 AA501 '+(S.iso1?'OPEN':'CLOSED'));};
 $('btnIso2').onclick=()=>{S.iso2=!S.iso2;logEv('Isolating valve MEX30 AA502 '+(S.iso2?'OPEN':'CLOSED'));};
@@ -741,13 +753,16 @@ function tick(){
   const charge=(S.ld1?3.0:0)+(S.ld2?3.0:0);
 
   /* ---- servomotor motion (opening needs full control pressure, closing works down to 8 bar) ---- */
-  let wgT=S.esd?0:(S.gov&&!S.brk?S.wgGov:S.wgSet);
-  if(S.gov&&!S.brk&&!S.esd){S.wgGov=clamp(S.wgGov+(100-S.spd)*0.028*DT*10,0,100);wgT=S.wgGov;}
-  const wgRate=S.esd?100/8:(wgT>S.wg?100/28:100/22);
+  let wgT;
+  if(S.runaway)wgT=100;               /* blade protection: force gates to 90° full open */
+  else if(S.esd)wgT=0;
+  else{wgT=(S.gov&&!S.brk)?S.wgGov:S.wgSet;
+    if(S.gov&&!S.brk){S.wgGov=clamp(S.wgGov+(100-S.spd)*0.028*DT*10,0,100);wgT=S.wgGov;}}
+  const wgRate=(S.esd||S.runaway)?100/8:(wgT>S.wg?100/28:100/22);
   const wg0=S.wg;
   if(Math.abs(wgT-S.wg)>0.05){
     const dir=Math.sign(wgT-S.wg);
-    if((dir>0&&S.press>=50)||(dir<0&&S.press>=8))
+    if((dir>0&&(S.press>=50||(S.runaway&&S.press>=8)))||(dir<0&&S.press>=8))
       S.wg=clamp(S.wg+dir*wgRate*DT,0,100);
   }
   if(wgT>S.wg+0.5&&S.press<50&&!S.permLog){
@@ -755,7 +770,7 @@ function tick(){
   if(S.press>=50)S.permLog=false;
   const dwg=S.wg-wg0;
 
-  let ruT=S.esd?0:(S.ruMode==='auto'?(S.wg<15?0:clamp((S.wg-15)*1.4,0,100)):S.ruSet);
+  let ruT=S.runaway?100:(S.esd?0:(S.ruMode==='auto'?(S.wg<15?0:clamp((S.wg-15)*1.4,0,100)):S.ruSet));
   const ru0=S.ru;
   if(Math.abs(ruT-S.ru)>0.05){
     const dir=Math.sign(ruT-S.ru);
@@ -774,20 +789,33 @@ function tick(){
   S.acc=clamp(S.acc+(charge-useRate)*DT,0,100);
   S.press=S.acc<=2?S.acc*10:20+43*S.acc/100;
 
-  /* ---- speed ---- */
+  /* ---- speed (RPM) & power — head-dependent ---- */
+  const hf=S.head/10;                                   /* head factor, 10 m nominal */
   let spdT;
-  if(S.brk)spdT=100;
-  else if(S.wg>3)spdT=100+58*(S.wg/100)*(0.45+0.55*S.ru/100);
+  if(S.brk)spdT=100;                                    /* grid locks the frequency */
+  else if(S.wg>3)spdT=(100+65*(S.wg/100)*(0.45+0.55*S.ru/100))*hf;
   else spdT=0;
-  const tau=S.brk?2.5:(spdT>S.spd?4:(S.wg>3?12:30));
+  const tau=S.brk?2.5:(spdT>S.spd?4/hf:(S.wg>3?12:30)); /* flood water accelerates faster */
   S.spd+=(spdT-S.spd)*DT/tau;
-  S.spd=clamp(S.spd,0,170);
+  S.spd=clamp(S.spd,0,200);
+  /* optimum gate angle 40° at 10 m head — shifts inversely with head */
+  const optDeg=clamp(40*10/S.head,15,80);
+  const wgDeg=S.wg*0.9;
+  const eff=Math.max(0,1-Math.pow((wgDeg-optDeg)/60,2));
+  S.mw=S.brk?21*Math.pow(hf,1.5)*eff*(wgDeg>2?1:0):0;
 
   /* ---- protections ---- */
-  if(S.spd>=115&&S.etripEn&&!S.ospdE){S.ospdE=true;trip('ELECTRICAL OVERSPEED 115 %');}
-  if(S.spd>=140&&!S.ospdM){S.ospdM=true;trip('MECHANICAL OVERSPEED DEVICE MEA70 AA201 — 140 %');}
+  if(S.runawayBlock&&S.spd<150)S.runawayBlock=false; /* re-arm runaway latch once speed recovers */
+  if(S.spd>=165&&!S.runaway&&!S.runawayBlock){
+    S.runaway=true;S.esd=true;S.sol70a=false;S.sol70b=false;S.cause='RUNAWAY >165 RPM';
+    if(S.brk){S.brk=false;logEv('Generator breaker OPENED by protection','a');}
+    logEv('*** RUNAWAY — SPEED ABOVE 165 RPM ABSOLUTE LIMIT ***','a');
+    logEv('SYSTEM SHUTDOWN — but the turbine is KEPT RUNNING: stopping the runner against this water pressure would break the blades.','a');
+    logEv('WICKET GATES FORCED FULLY OPEN (90°) on accumulator oil to pass maximum flow with minimum pressure across the blades.','a');}
+  if(S.spd>=115&&S.etripEn&&!S.ospdE&&!S.runaway){S.ospdE=true;trip('ELECTRICAL OVERSPEED 115 RPM');}
+  if(S.spd>=140&&!S.ospdM&&!S.runaway){S.ospdM=true;trip('MECHANICAL OVERSPEED DEVICE MEA70 AA201 — 140 RPM');}
   if(S.press<45&&S.wg>5&&!S.esd)trip('PRESSURE TOO LOW — MEX16 CP102');
-  if(!S.sol70a||!S.sol70b)S.esd=true;
+  if((!S.sol70a||!S.sol70b)&&!S.runaway)S.esd=true;
 
   /* ---- cooling / temperature ---- */
   const heat=(S.ld1?0.10:0)+(S.ld2?0.10:0)+(S.spd>5?0.03:0);
@@ -905,18 +933,21 @@ function render(wgT,ruT,dwg,dru,repl){
   $('gPressArc').setAttribute('stroke-dashoffset',151*(1-clamp(S.press,0,80)/80));
   rot($('gPressN'),clamp(S.press,0,80)/80*180,60,66);
   $('gPressV').textContent=S.press.toFixed(1)+' bar';
-  $('gSpdArc').setAttribute('stroke-dashoffset',151*(1-clamp(S.spd,0,160)/160));
-  $('gSpdArc').setAttribute('stroke',S.spd>115?'#ff4d4d':(S.spd>105?'#ffb020':'#3fd68f'));
-  rot($('gSpdN'),clamp(S.spd,0,160)/160*180,60,66);
-  $('gSpdV').textContent=S.spd.toFixed(0)+' %';
+  $('gSpdArc').setAttribute('stroke-dashoffset',151*(1-clamp(S.spd,0,180)/180));
+  $('gSpdArc').setAttribute('stroke',S.spd>165?'#ff4d4d':(S.spd>115?'#ffb020':'#3fd68f'));
+  rot($('gSpdN'),clamp(S.spd,0,180)/180*180,60,66);
+  $('gSpdV').textContent=S.spd.toFixed(0)+' RPM';
   $('barAcc').style.width=S.acc+'%';$('valAcc').textContent=S.acc.toFixed(0)+' %';
-  $('barWG').style.width=S.wg+'%';$('valWG').textContent=S.wg.toFixed(0)+' %';
+  $('barWG').style.width=S.wg+'%';$('valWG').textContent=(S.wg*0.9).toFixed(1)+'°';
+  $('optV').textContent=clamp(40*10/S.head,15,80).toFixed(1)+'°';
+  $('mwV').textContent=S.mw.toFixed(1)+' MW';
+  $('headV').textContent=S.head.toFixed(1)+' m';
   $('barRU').style.width=S.ru+'%';$('valRU').textContent=(-10+35*S.ru/100).toFixed(1)+'°';
   $('barHub').style.width=S.hub+'%';$('valHub').textContent=S.hub.toFixed(0)+' %';
   $('barTemp').style.width=clamp((S.temp-20)/60*100,0,100)+'%';$('valTemp').textContent=S.temp.toFixed(1)+' °C';
   $('barLeak').style.width=S.leak+'%';$('valLeak').textContent=S.leak.toFixed(0)+' %';
   $('barSump').style.width=S.sump+'%';$('valSump').textContent=S.sump.toFixed(0)+' %';
-  $('wgSetV').textContent=S.wgSet+' %';
+  $('wgSetV').textContent=(S.wgSet*0.9).toFixed(1)+'°';
   $('btnUnl1').textContent=S.run1?(S.ld1?'LOADED':'UNLOADED'):'—';
   $('btnUnl1').classList.toggle('on',S.ld1);
   $('btnUnl2').textContent=S.run2?(S.ld2?'LOADED':'UNLOADED'):'—';
@@ -934,12 +965,13 @@ function render(wgT,ruT,dwg,dru,repl){
   $('stCart').textContent=S.esd?'OPEN — dumping':'closed';
   $('stCause').textContent=S.cause;
   const chip=$('chipUnit');
-  if(S.esd){chip.textContent='UNIT TRIPPED — ESD';chip.className='statusChip trip';}
-  else if(S.brk){chip.textContent='ON GRID · '+S.wg.toFixed(0)+' % load';chip.className='statusChip run';}
+  if(S.runaway){chip.textContent='RUNAWAY — GATES FORCED 90° OPEN';chip.className='statusChip trip';}
+  else if(S.esd){chip.textContent='UNIT TRIPPED — ESD';chip.className='statusChip trip';}
+  else if(S.brk){chip.textContent='ON GRID · '+S.mw.toFixed(1)+' MW';chip.className='statusChip run';}
   else if(S.spd>5){chip.textContent='RUNNING NO-LOAD';chip.className='statusChip run';}
   else{chip.textContent='UNIT STOPPED';chip.className='statusChip';}
   $('chipPress').textContent=S.press.toFixed(1)+' bar';
-  $('chipSpeed').textContent=S.spd.toFixed(0)+' % n';
+  $('chipSpeed').textContent=S.spd.toFixed(0)+' RPM · H '+S.head.toFixed(1)+' m';
 
   /* ---- alarms ---- */
   alarm('alCP101',S.press<52&&S.press>1,'MEX16 CP101 — system pressure LOW (<52 bar)');
@@ -950,8 +982,9 @@ function render(wgT,ruT,dwg,dru,repl){
   alarm('alLK102',S.leak>85,'MEX18 CL102 — leakage tank TOO HIGH');
   alarm('alHUB',S.hub<20,'MEX30 CL103 — hub oil tank level TOO LOW');
   alarm('alTEMP',S.temp>55,'Oil temperature HIGH — start cooling MEX14');
-  alarm('alOSPD-E',S.ospdE,'ELECTRICAL OVERSPEED 115 %');
-  alarm('alOSPD-M',S.ospdM,'MECHANICAL OVERSPEED MEA70 AA201 — 140 %');
+  alarm('alOSPD-E',S.ospdE,'ELECTRICAL OVERSPEED 115 RPM');
+  alarm('alOSPD-M',S.ospdM,'MECHANICAL OVERSPEED MEA70 AA201 — 140 RPM');
+  alarm('alRUN',S.runaway,'RUNAWAY >165 RPM — system shutdown, gates forced to 90° full open (blade protection)');
   $('lampCL101').classList.toggle('tripR',S.sump>90);
   $('lampCL102').classList.toggle('tripR',S.sump<56);
   $('lampCL103').classList.toggle('tripR',S.sump<=48);
@@ -961,7 +994,8 @@ function render(wgT,ruT,dwg,dru,repl){
 
 /* ================= GUIDED LESSONS ================= */
 function setPump(key,mode,tgl){S[key]=mode;syncTgl(tgl,mode);}
-function setWG(v){S.wgSet=v;$('wgSet').value=v;$('wgSetV').textContent=v+' %';}
+function setWG(v){S.wgSet=v;$('wgSet').value=(v*0.9).toFixed(1);$('wgSetV').textContent=(v*0.9).toFixed(1)+'°';}
+function setHead(h){S.head=h;$('headSet').value=h;$('headV').textContent=h.toFixed(1)+' m';logEv('Water head changed to '+h.toFixed(1)+' m');}
 const LESSONS={
 start:{name:'Normal start-up',steps:()=>[
  {txt:'START-UP · Everything begins at the SUMP TANK (MEX10 BB001, EL 245.0) — the reservoir all oil returns to. The unit is stopped, pressure 0.',dwell:5},
@@ -971,8 +1005,8 @@ start:{name:'Normal start-up',steps:()=>[
  {txt:'System pressure ≥ 58 bar — the energy reserve is ready. ESD solenoids MEX70 AA001 + AA002 are energized (armed): the shutdown chain is healthy.',dwell:5},
  {txt:'Opening command: proportional pilot valve MEX20 AA001 strokes main stage AA002 — pressure oil flows through throttle AA701 to the OPEN side of the wicket-gate servomotor. Gates to 15 % for start.',act:()=>setWG(15),dwell:5},
  {txt:'Water accelerates the runner. The runner-blade cam (MEX30) keeps blades at start position while speed rises to nominal…',until:()=>S.spd>=95,dwell:4},
- {txt:'Speed ≈ 100 % → generator breaker closes, unit synchronized to the grid.',act:()=>{if(!S.esd&&S.spd>=90){S.brk=true;logEv('Generator breaker CLOSED — unit on grid','g');}},dwell:4},
- {txt:'Loading: gates open towards 70 %. Watch MEX30 — pilot AA001 / main stage AA002 send oil through the rotating OIL HEAD into the hub servomotor; the blade pitch follows the cam for best efficiency.',act:()=>setWG(70),until:()=>S.wg>=65,dwell:5},
+ {txt:'Speed ≈ 100 RPM (nominal) → generator breaker closes, unit synchronized to the grid.',act:()=>{if(!S.esd&&S.spd>=90){S.brk=true;logEv('Generator breaker CLOSED — unit on grid','g');}},dwell:4},
+ {txt:'Loading: gates open towards ~63° — beyond the 40° optimum the output curve flattens. Watch MEX30 — pilot AA001 / main stage AA002 send oil through the rotating OIL HEAD into the hub servomotor; the blade pitch follows the cam for best efficiency.',act:()=>setWG(70),until:()=>S.wg>=65,dwell:5},
  {txt:'✔ Unit on grid at ~70 % load. Pumps now only top up the accumulators (unloader cycling) — the governor consumes oil only when it moves a servomotor.',dwell:8},
 ]},
 stop:{name:'Normal shutdown',steps:()=>[
@@ -992,7 +1026,7 @@ esd:{name:'Emergency shutdown',steps:()=>[
 rej:{name:'Load rejection / overspeed',steps:()=>[
  {txt:'LOAD REJECTION · Worst case: unit at full load suddenly loses the grid. Preparing — unit must be on load first (runs Lesson 1 automatically if needed).',act:()=>{if(!S.brk){runLesson('start',()=>runLesson('rej'));}},until:()=>S.brk&&S.wg>=60,dwell:5},
  {txt:'BREAKER OPENS AT FULL LOAD! All water power now accelerates the runner — watch the speed gauge race upward.',act:()=>{S.brk=false;logEv('*** FULL LOAD REJECTION ***','a');},dwell:4},
- {txt:'At 115 % the ELECTRICAL overspeed trip fires the ESD chain. (The mechanical flyweight device MEA70 AA201 on the shaft is the last line of defence at 140 % — try disabling the electrical trip later to see it act.)',until:()=>S.esd,dwell:6},
+ {txt:'At 115 RPM the ELECTRICAL overspeed trip fires the ESD chain. (The mechanical flyweight device MEA70 AA201 on the shaft is the last line of defence at 140 RPM — try disabling the electrical trip later to see it act.)',until:()=>S.esd,dwell:6},
  {txt:'Cartridge valves dump accumulator oil to the close side — gates race shut, speed peaks and falls.',until:()=>S.spd<105,dwell:5},
  {txt:'✔ Speed recovered without damage. Reset the trip when the unit is calm.',dwell:8},
 ]},
@@ -1009,6 +1043,16 @@ cool:{name:'Oil cooling circuit',steps:()=>[
  {txt:'Solenoid MEX14 AA001 opens the raw COOLING WATER through the other side of the cooler — only now is heat actually removed.',act:()=>{S.cw=true;logEv('Cooling water solenoid MEX14 AA001 OPEN','g');},dwell:6},
  {txt:'Oil returns cooled to the sump. Temperature falls toward 35 °C…',until:()=>S.temp<=40,dwell:6},
  {txt:'✔ Circuit off again — in AUTO this cycles on the temperature switch.',act:()=>{S.cool=false;S.cw=false;logEv('Cooling circuit stopped','g');},dwell:5},
+]},
+runaway:{name:'Flood runaway >165 RPM — blade protection',steps:()=>[
+ {txt:'RUNAWAY PROTECTION · Absolute speed limit: 165 RPM (normal 100). Above it the whole governor SYSTEM shuts down but the TURBINE IS KEPT RUNNING — stopping the runner against flood-water pressure would break the blades: enormous financial damage. Instead the wicket gates are thrown FULLY OPEN to 90° so the water passes with minimum pressure across the blades.',dwell:10},
+ {txt:'First the unit goes on load at normal head (10 m) — running the start-up sequence automatically if needed…',act:()=>{setHead(10);if(!S.brk)runLesson('start',()=>runLesson('runaway'));},until:()=>S.brk&&S.wg>=60,dwell:5},
+ {txt:'FLOOD ARRIVES: head rises to 16 m while on grid. The grid still locks the speed at 100 RPM, but look — output jumps and the optimum gate angle drops well below 40°. All that extra water energy is waiting…',act:()=>setHead(16),dwell:8},
+ {txt:'FULL LOAD REJECTION at 16 m head! The 115 RPM electrical trip fires and the gates start closing — but the flood keeps accelerating the runner right through 140 RPM…',act:()=>{S.brk=false;logEv('*** LOAD REJECTION AT FLOOD HEAD 16 m ***','a');},until:()=>S.runaway||S.spd<105,dwell:5},
+ {txt:'>165 RPM — RUNAWAY! Watch the gates REVERSE and drive to 90° full open on accumulator oil; the blades go fully open too. The unit freewheels at high speed — uncomfortable, but nothing breaks.',until:()=>S.wg>95||!S.runaway,dwell:8},
+ {txt:'Recovery is only possible when the flood recedes. Lowering the head back to 9 m…',act:()=>setHead(9),dwell:6},
+ {txt:'Head ≤ 11 m — RESET is accepted now: the runaway latch clears and the gates close at emergency rate, speed collapses.',act:()=>resetTrip(),until:()=>S.wg<2,dwell:6},
+ {txt:'✔ Unit saved. Press RESET once more when stopped to re-arm the ESD solenoids. This is the one case where protection OPENS the gates instead of closing them.',dwell:10},
 ]}};
 const LS={key:null,steps:null,idx:-1,t:0,after:null};
 function runLesson(key,after){
