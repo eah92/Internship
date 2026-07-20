@@ -148,13 +148,16 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
   <path class="pipe thin" id="pN2b" d="M310,42 H430 M310,60 V42"/>
   <path class="pipe thin" id="pCP"  d="M480,190 V172 M505,190 V172"/>
   <path class="pipe" id="pHdrWG"   d="M300,190 V300 H310"/>
-  <path class="pipe" id="pHdrESD"  d="M550,190 V255"/>
+  <path class="pipe" id="pHdrESD"  d="M524,190 V240 M502,252 V240 H546 V252"/>
+  <path class="pipe" id="pCartP"   d="M524,232 H588 V343 M588,299 H596 M588,343 H596"/>
+  <path class="pipe" id="pChk1"    d="M670,415 V470"/>
+  <path class="pipe" id="pChk2"    d="M690,415 V470"/>
   <path class="pipe" id="pHdrRU"   d="M760,190 V282"/>
   <path class="pipe" id="pHdrRepl" d="M865,190 V455 H725 V470"/>
   <path class="pipe thin" id="pByp" d="M865,262 H900 V318 H865"/>
   <path class="pipe" id="pWGopen"  d="M350,324 V355 H460 V415 H890 V320"/>
   <path class="pipe" id="pWGclose" d="M350,282 V262 H1035 V300 H980"/>
-  <path class="pipe" id="pESDtoWG" d="M640,335 H660 V262"/>
+  <path class="pipe" id="pESDtoWG" d="M626,299 V343 M626,321 H660 V262"/>
   <path class="pipe" id="pESDtoRU" d="M581,358 H670 V325 H680"/>
   <path class="pipe" id="pRUopen"  d="M780,300 H876 V498"/>
   <path class="pipe" id="pRUclose" d="M780,340 H866 V498"/>
@@ -176,10 +179,10 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
   <path class="pipe" id="pLeak1"   d="M650,700 V660"/>
   <path class="pipe" id="pLeak2"   d="M710,700 V660 H650"/>
   <path class="pipe" id="pLeakHdr" d="M650,660 H530 V700"/>
-  <path class="pipe thin" id="sPil1" d="M498,277 V300"/>
-  <path class="pipe thin" id="sPil2" d="M538,277 V300"/>
-  <path class="pipe thin" id="sPil3" d="M521,313 H600"/>
-  <path class="pipe thin" id="sPil4" d="M503,326 V345"/>
+  <path class="pipe thin" id="sPil1" d="M491,276 V300"/>
+  <path class="pipe thin" id="sPil2" d="M546,276 V300"/>
+  <path class="pipe thin" id="sPil3" d="M550,316 H611 V272"/>
+  <path class="pipe thin" id="sPil4" d="M503,332 V354 H530"/>
   <path class="pipe thin" id="sOspd" d="M952,480 V440 H620 V392"/>
 </g>
 
@@ -294,68 +297,25 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
 
 <!-- ======== WICKET GATE CONTROL BLOCK MEX20  EL 245.0 ======== -->
 <rect class="blkbox" x="250" y="240" width="170" height="150" rx="6"/>
-<text class="blkttl" x="256" y="252">WICKET GATE CONTROL · MEX20</text>
+<text class="blkttl" x="256" y="236">WICKET GATE CONTROL · MEX20</text>
 <g class="comp" data-id="MEX20AT001">
   <rect class="hitbox" x="282" y="204" width="38" height="34"/>
   <path d="M292,220 l9,-11 9,11 -9,11 z" class="body"/>
   <path d="M301,220 l9,-11 9,11 -9,11 z" class="body"/>
   <text class="kkstxt" x="322" y="214">AT001 dual filter</text>
 </g>
-<g class="comp" data-id="MEX20AA001">
-  <rect class="hitbox" x="326" y="258" width="48" height="26"/>
-  <rect id="wgPilot" class="body" x="330" y="261" width="40" height="20" rx="2"/>
-  <line x1="334" y1="265" x2="366" y2="277" stroke="#9fb4d4"/>
-  <text class="kkstxt" x="376" y="274">AA001 pilot</text>
-</g>
-<g class="comp" data-id="MEX20AA002">
-  <rect class="hitbox" x="306" y="288" width="90" height="42"/>
-  <rect class="body" x="310" y="292" width="80" height="34" rx="2"/>
-  <line x1="336" y1="292" x2="336" y2="326" stroke="#49608a"/>
-  <line x1="363" y1="292" x2="363" y2="326" stroke="#49608a"/>
-  <rect id="wgSpool" x="338" y="296" width="24" height="26" fill="#3c5a85"/>
-  <text class="kkstxt" x="308" y="340">AA002 main stage 4/3</text>
-</g>
-<g class="comp" data-id="MEX20AA701">
-  <rect class="hitbox" x="336" y="344" width="30" height="24"/>
-  <path d="M344,348 q6,7 0,14 M360,348 q-6,7 0,14" fill="none" stroke="#c9a84a" stroke-width="1.5"/>
-  <text class="kkstxt" x="368" y="360">AA701</text>
-</g>
-<g class="comp" data-id="MEX20AA003">
-  <rect class="hitbox" x="644" y="284" width="34" height="44"/>
-  <path d="M652,296 l10,7 -10,7 z M652,314 l10,7 -10,7 z" fill="none" stroke="#c98" stroke-width="1.4"/>
-  <text class="kkstxt" x="612" y="292">AA003-006 ✓×4</text>
-</g>
+<g id="blkMEX20"></g>
+<g id="blkChecks"></g>
 
 <!-- ======== EMERGENCY SHUTDOWN BLOCK MEX70 ======== -->
 <rect class="blkbox" x="470" y="240" width="170" height="150" rx="6"/>
-<text class="blkttl" x="476" y="252">EMERGENCY SHUTDOWN · MEX70</text>
-<g class="comp" data-id="MEX70AA001"><rect class="hitbox" x="481" y="253" width="34" height="28"/><rect id="sol70a" class="body" x="485" y="257" width="26" height="20" rx="2"/><line x1="489" y1="262" x2="507" y2="272" stroke="#9fb4d4"/><text class="kkstxt" x="482" y="290">AA001</text></g>
-<g class="comp" data-id="MEX70AA002"><rect class="hitbox" x="521" y="253" width="34" height="28"/><rect id="sol70b" class="body" x="525" y="257" width="26" height="20" rx="2"/><line x1="529" y1="262" x2="547" y2="272" stroke="#9fb4d4"/><text class="kkstxt" x="524" y="290">AA002</text></g>
-<g class="comp" data-id="MEX70AA003"><rect class="hitbox" x="481" y="296" width="44" height="34"/><rect id="hv70" class="body" x="485" y="300" width="36" height="26" rx="2"/><text class="lbl" x="491" y="317" fill="#9fb4d4">HV</text><text class="kkstxt" x="482" y="338">AA003</text></g>
-<g class="comp" data-id="MEX70AA010"><rect class="hitbox" x="596" y="291" width="36" height="30"/><rect id="cart10" class="body" x="600" y="295" width="28" height="22" rx="2"/><text class="lbl" x="604" y="310" fill="#9fb4d4">C1</text><text class="kkstxt" x="596" y="290">AA010</text></g>
-<g class="comp" data-id="MEX70AA012"><rect class="hitbox" x="596" y="326" width="36" height="30"/><rect id="cart12" class="body" x="600" y="330" width="28" height="22" rx="2"/><text class="lbl" x="604" y="345" fill="#9fb4d4">C2</text><text class="kkstxt" x="632" y="345">AA012</text></g>
-<g class="comp" data-id="MEX70AA005"><rect class="hitbox" x="541" y="341" width="44" height="34"/><rect id="hv70ru" class="body" x="545" y="345" width="36" height="26" rx="2"/><text class="lbl" x="549" y="362" fill="#9fb4d4">HV-RU</text><text class="kkstxt" x="541" y="384">AA005</text></g>
+<text class="blkttl" x="476" y="236">EMERGENCY SHUTDOWN · MEX70</text>
+<g id="blkMEX70"></g>
 
 <!-- ======== RUNNER BLADE CONTROL BLOCK MEX30 ======== -->
 <rect class="blkbox" x="680" y="240" width="170" height="150" rx="6"/>
-<text class="blkttl" x="686" y="252">RUNNER BLADE CONTROL · MEX30</text>
-<g class="comp" data-id="MEX30AA001">
-  <rect class="hitbox" x="706" y="258" width="48" height="26"/>
-  <rect id="ruPilot" class="body" x="710" y="261" width="40" height="20" rx="2"/>
-  <line x1="714" y1="265" x2="746" y2="277" stroke="#9fb4d4"/>
-  <text class="kkstxt" x="756" y="274">AA001 pilot</text>
-</g>
-<g class="comp" data-id="MEX30AA002">
-  <rect class="hitbox" x="696" y="288" width="90" height="42"/>
-  <rect class="body" x="700" y="292" width="80" height="34" rx="2"/>
-  <line x1="726" y1="292" x2="726" y2="326" stroke="#49608a"/>
-  <line x1="753" y1="292" x2="753" y2="326" stroke="#49608a"/>
-  <rect id="ruSpool" x="728" y="296" width="24" height="26" fill="#3c5a85"/>
-  <text class="kkstxt" x="698" y="340">AA002 main stage 4/3</text>
-</g>
-<g class="comp" data-id="MEX30AA003"><rect class="hitbox" x="790" y="288" width="24" height="24"/><path d="M796,294 l10,6 -10,6 z" fill="none" stroke="#c98" stroke-width="1.4"/><text class="kkstxt" x="788" y="286">AA003 ✓</text></g>
-<g class="comp" data-id="MEX30AA701"><rect class="hitbox" x="820" y="288" width="26" height="24"/><path d="M826,293 q5,7 0,13 M840,293 q-5,7 0,13" fill="none" stroke="#c9a84a" stroke-width="1.4"/><text class="kkstxt" x="818" y="322">AA701</text></g>
-<g class="comp" data-id="MEX30AA702"><rect class="hitbox" x="820" y="330" width="26" height="24"/><path d="M826,335 q5,7 0,13 M840,335 q-5,7 0,13" fill="none" stroke="#c9a84a" stroke-width="1.4"/><text class="kkstxt" x="818" y="366">AA702</text></g>
+<text class="blkttl" x="686" y="236">RUNNER BLADE CONTROL · MEX30</text>
+<g id="blkMEX30"></g>
 
 <!-- hub replenishing line valves -->
 <g class="comp" data-id="MEX30AA501"><rect class="hitbox" x="850" y="228" width="30" height="26"/><path d="M857,234 l16,12 m0,-12 l-16,12" stroke="#8fb4e8" stroke-width="1.6" fill="none"/><text class="kkstxt" x="884" y="246">AA501 iso</text></g>
@@ -491,6 +451,16 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
     <div class="row"><label>Electrical overspeed trip 115 RPM <i>(disable to demo mechanical backup)</i></label><button class="btn on" id="btnEtrip">ENABLED</button></div>
   </div>
 
+  <div class="sect"><h2>Solenoid valves · manual control</h2>
+    <div class="row"><label>ESD solenoid 1 <span class="kks">MEX70 AA001</span></label><button class="btn" id="bS70a">—</button></div>
+    <div class="row"><label>ESD solenoid 2 <span class="kks">MEX70 AA002</span></label><button class="btn" id="bS70b">—</button></div>
+    <div class="row"><label>Pump 1 unloader <span class="kks">MEX11 AA001</span></label><button class="btn" id="bS11">—</button></div>
+    <div class="row"><label>Pump 2 unloader <span class="kks">MEX12 AA001</span></label><button class="btn" id="bS12">—</button></div>
+    <div class="row"><label>Cooling water <span class="kks">MEX14 AA001</span></label><button class="btn" id="bS14">—</button></div>
+    <div class="row"><label>Hub replenishing <span class="kks">MEX30 AA004</span></label><button class="btn" id="bS30">—</button></div>
+    <div style="font-size:10px;color:var(--dim);margin-top:4px">On the diagram: an energized coil shows its valve shifted to the left position box (highlighted). Flip any solenoid and watch the spool shift and the oil path change.</div>
+  </div>
+
   <div class="sect"><h2>Emergency shutdown · MEX70</h2>
     <div class="row"><label>ESD solenoid 1 <span class="kks">MEX70 AA001</span></label><span class="val" id="stSol70a">—</span></div>
     <div class="row"><label>ESD solenoid 2 <span class="kks">MEX70 AA002</span></label><span class="val" id="stSol70b">—</span></div>
@@ -580,16 +550,19 @@ MEX20AT001:['MEX20 AT001','Dual filter, governor control oil','Twin change-over 
 MEX20AA001:['MEX20 AA001','WG proportional valve — pilot','Electrical governor command → hydraulic pilot pressure.'],
 MEX20AA002:['MEX20 AA002','WG proportional valve — main stage','4/3 valve directing pressure oil to open/close side of WG servomotor.'],
 MEX20AA701:['MEX20 AA701','Throttle — WG opening time','Sets wicket-gate opening time (~28 s).'],
-MEX20AA003:['MEX20 AA003-006','ESD check valves ×4','Let emergency closing oil bypass the proportional valve main stage.'],
+MEX20AA003:['MEX20 AA003','Pilot-operated check valve (ESD) 1/4','Normally blocks; the ESD pilot signal opens it so emergency oil bypasses the proportional-valve 2nd stage. Ball glows red while passing.'],
+MEX20AA004:['MEX20 AA004','Pilot-operated check valve (ESD) 2/4','Redundant path of the ESD bypass bridge around main stage AA002.'],
+MEX20AA005:['MEX20 AA005','Pilot-operated check valve (ESD) 3/4','Redundant path of the ESD bypass bridge around main stage AA002.'],
+MEX20AA006:['MEX20 AA006','Pilot-operated check valve (ESD) 4/4','Redundant path of the ESD bypass bridge around main stage AA002.'],
 MEX70AA001:['MEX70 AA001','ESD solenoid 1','Energized = armed. De-energize (CLICK) → emergency shutdown. Fail-safe.'],
 MEX70AA002:['MEX70 AA002','ESD solenoid 2','Redundant ESD solenoid — either one dropping trips the unit. CLICK to test.'],
 MEX70AA003:['MEX70 AA003','ESD hydraulic valve','Pilot-operated stage between solenoids and cartridge valves.'],
-MEX70AA010:['MEX70 AA010','ESD cartridge valve 1','Large-bore valve passing accumulator oil straight to WG close side.'],
-MEX70AA012:['MEX70 AA012','ESD cartridge valve 2','Redundant cartridge valve.'],
+MEX70AA010:['MEX70 AA010','ESD cartridge valve 1','Large-bore logic element: spring + pilot pressure hold the poppet on its seat. When AA003 vents the pilot chamber the poppet LIFTS (watch it) and accumulator oil passes straight to the WG close side.'],
+MEX70AA012:['MEX70 AA012','ESD cartridge valve 2','Redundant cartridge poppet valve — same function as AA010, either one is enough to close the gates.'],
 MEX70AA005:['MEX70 AA005','Hydraulic valve — RU on ESD','Drives runner blades closed during emergency shutdown.'],
 MEX30AA001:['MEX30 AA001','RU proportional valve — pilot',''],
 MEX30AA002:['MEX30 AA002','RU proportional valve — main stage','Directs oil via the oil head to the runner-blade servomotor in the hub.'],
-MEX30AA003:['MEX30 AA003','Check valve RU control',''],
+MEX30AA003:['MEX30 AA003','Pilot-operated check valve — RU','Holds the runner-blade servomotor hydraulically locked; the dashed pilot line from the opposite line lifts the ball so oil can return when the blades move.'],
 MEX30AA701:['MEX30 AA701','Throttle — RU opening time',''],
 MEX30AA702:['MEX30 AA702','Throttle — RU closing time',''],
 MEX30AA501:['MEX30 AA501','Isolating valve — hub replenishing','CLICK to open/close.'],
@@ -633,6 +606,134 @@ function setFlow(id,on,col,rev){const f=FLOW[id];if(!f)return;
 </script>
 <script>
 "use strict";
+/* ================= ISO 1219 SYMBOL BUILDERS (as in drawing NBE-102-02-001) ================= */
+const SVGNS='http://www.w3.org/2000/svg';
+const ISO={};
+function el(t,a,p){const e=document.createElementNS(SVGNS,t);for(const k in a)if(a[k]!==null)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e;}
+function tx(p,x,y,s,c){const t=el('text',{x:x,y:y,'class':c||'kkstxt'},p);t.textContent=s;return t;}
+function comp(p,id){return el('g',{'class':'comp','data-id':id},p);}
+function spring(p,x,y){el('path',{d:'M'+x+','+y+' l5,3 -5,3 5,3 -5,3 5,3',fill:'none',stroke:'#8aa2c6','stroke-width':1.2},p);}
+function coil(p,x,y){const r=el('rect',{x:x,y:y,width:9,height:12,'class':'body'},p);el('line',{x1:x,y1:y+12,x2:x+9,y2:y,stroke:'#9fb4d4','stroke-width':1},p);return r;}
+function ptri(p,x,y){el('path',{d:'M'+x+','+y+' l8,4 -8,4 z',fill:'none',stroke:'#c9a84a','stroke-width':1.1},p);}
+function boxPass(p,x,y,w,h){el('path',{d:'M'+(x+w*0.3)+','+(y+h-3)+' V'+(y+3)+' M'+(x+w*0.3-3)+','+(y+8)+' l3,-5 3,5 M'+(x+w*0.7)+','+(y+3)+' V'+(y+h-3)+' M'+(x+w*0.7-3)+','+(y+h-8)+' l3,5 3,-5',fill:'none',stroke:'#9fb4d4','stroke-width':1.1},p);}
+function boxCross(p,x,y,w,h){el('path',{d:'M'+(x+w*0.28)+','+(y+h-3)+' L'+(x+w*0.72)+','+(y+3)+' M'+(x+w*0.72)+','+(y+h-3)+' L'+(x+w*0.28)+','+(y+3),fill:'none',stroke:'#9fb4d4','stroke-width':1.1},p);}
+function boxBlock(p,x,y,w,h){el('path',{d:'M'+(x+w*0.3)+','+(y+4)+' V'+(y+h*0.32)+' M'+(x+w*0.3-4)+','+(y+h*0.32)+' h8 M'+(x+w*0.7)+','+(y+h-4)+' V'+(y+h*0.68)+' M'+(x+w*0.7-4)+','+(y+h*0.68)+' h8',fill:'none',stroke:'#9fb4d4','stroke-width':1.1},p);}
+function portLbl(p,x,y,s){tx(p,x,y,s,'lbl');}
+
+/* ----- MEX20 wicket-gate control block ----- */
+(function(){const g=$('blkMEX20');
+ const gp=comp(g,'MEX20AA001');
+ el('rect',{x:316,y:256,width:60,height:16,'class':'body',id:'wgPilot'},gp);
+ el('line',{x1:336,y1:256,x2:336,y2:272,stroke:'#49608a'},gp);
+ el('line',{x1:356,y1:256,x2:356,y2:272,stroke:'#49608a'},gp);
+ coil(gp,303,258);coil(gp,380,258);
+ el('rect',{x:298,y:252,width:96,height:24,'class':'hitbox'},gp);
+ tx(gp,300,250,'AA001 pilot (proportional)');
+ el('line',{x1:346,y1:272,x2:346,y2:288,stroke:'#8a7a3a','stroke-dasharray':'3 3'},g);
+ const gm=comp(g,'MEX20AA002');
+ for(let i=0;i<3;i++)el('rect',{x:311+i*26,y:288,width:26,height:32,'class':'body'},gm);
+ boxPass(gm,311,288,26,32);boxBlock(gm,337,288,26,32);boxCross(gm,363,288,26,32);
+ spring(gm,300,298);spring(gm,391,298);
+ ISO.wgSpool=el('rect',{x:337,y:288,width:26,height:32,fill:'rgba(255,210,63,.22)',stroke:'#ffd23f','stroke-width':1,id:'wgSpool'},gm);
+ el('rect',{x:296,y:284,width:102,height:42,'class':'hitbox'},gm);
+ tx(gm,306,340,'AA002 main stage 4/3');
+ portLbl(gm,304,300,'P');portLbl(gm,341,285,'B');portLbl(gm,341,331,'A');portLbl(gm,371,331,'T');
+ const gt=comp(g,'MEX20AA701');
+ el('path',{d:'M344,348 q6,7 0,14 M360,348 q-6,7 0,14',fill:'none',stroke:'#c9a84a','stroke-width':1.5},gt);
+ el('rect',{x:338,y:344,width:28,height:22,'class':'hitbox'},gt);
+ tx(gt,368,360,'AA701 throttle');
+})();
+
+/* ----- MEX20 AA003-006 pilot-operated ESD check valves ----- */
+(function(){const g=$('blkChecks');
+ el('rect',{x:648,y:404,width:60,height:74,'class':'blkbox'},g);
+ tx(g,556,398,'MEX20 AA003–006 · ESD pilot checks','blkttl');
+ const ids=['MEX20AA003','MEX20AA004','MEX20AA005','MEX20AA006'];
+ const pos=[[670,432],[670,458],[690,432],[690,458]];
+ ISO.checks=[];
+ pos.forEach((pt,i)=>{const c=comp(g,ids[i]);
+   el('path',{d:'M'+(pt[0]-6)+','+(pt[1]+5)+' L'+pt[0]+','+(pt[1]-1)+' L'+(pt[0]+6)+','+(pt[1]+5),fill:'none',stroke:'#c98','stroke-width':1.4},c);
+   const ball=el('circle',{cx:pt[0],cy:pt[1]-5,r:4,fill:'#16233a',stroke:'#c98','stroke-width':1.3},c);
+   el('line',{x1:pt[0]+(i<2?-15:8),y1:pt[1]-5,x2:pt[0]+(i<2?-7:15),y2:pt[1]-5,stroke:'#ff5c5c','stroke-dasharray':'3 3'},c);
+   el('rect',{x:pt[0]-9,y:pt[1]-12,width:18,height:20,'class':'hitbox'},c);
+   ISO.checks.push(ball);});
+})();
+
+/* ----- MEX70 emergency shutdown block ----- */
+(function(){const g=$('blkMEX70');
+ function sol42(id,dataId,x,lbl){const c=comp(g,dataId);
+   el('rect',{x:x,y:252,width:22,height:24,'class':'body',id:id},c);
+   el('rect',{x:x+22,y:252,width:22,height:24,'class':'body'},c);
+   boxBlock(c,x,252,22,24);boxPass(c,x+22,252,22,24);
+   const mark=el('rect',{x:x,y:252,width:22,height:24,fill:'rgba(255,210,63,.25)',stroke:'#ffd23f','stroke-width':1},c);
+   coil(c,x-10,258);spring(c,x+46,256);
+   el('rect',{x:x-11,y:248,width:66,height:32,'class':'hitbox'},c);
+   tx(c,x+2,246,lbl);
+   return mark;}
+ ISO.s70a=sol42('sol70a','MEX70AA001',480,'AA001 ESD sol.1');
+ ISO.s70b=sol42('sol70b','MEX70AA002',526,'AA002 ESD sol.2');
+ const h=comp(g,'MEX70AA003');
+ el('rect',{x:480,y:300,width:35,height:32,'class':'body',id:'hv70'},h);
+ el('rect',{x:515,y:300,width:35,height:32,'class':'body'},h);
+ boxBlock(h,480,300,35,32);boxPass(h,515,300,35,32);
+ ISO.hvMark=el('rect',{x:480,y:300,width:35,height:32,fill:'rgba(255,92,92,.22)',stroke:'#ff5c5c','stroke-width':1,visibility:'hidden'},h);
+ ptri(h,468,312);spring(h,552,306);
+ el('rect',{x:466,y:296,width:94,height:40,'class':'hitbox'},h);
+ tx(h,478,344,'AA003 ESD hydraulic valve');
+ tx(g,588,270,'CARTRIDGE VALVES');
+ function cart(dataId,id,y,lbl){const c=comp(g,dataId);
+   el('rect',{x:596,y:y,width:30,height:38,'class':'body2'},c);
+   el('path',{d:'M596,'+(y+32)+' l11,-7 M626,'+(y+32)+' l-11,-7',stroke:'#5b7194','stroke-width':1.2,fill:'none'},c);
+   const pop=el('path',{d:'M604,'+(y+13)+' h14 l-7,12 z',fill:'#24344f',stroke:'#9fb4d4','stroke-width':1.3,id:id},c);
+   spring(c,608,y+2);
+   el('line',{x1:611,y1:y-8,x2:611,y2:y,stroke:'#ff5c5c','stroke-dasharray':'3 3'},c);
+   el('rect',{x:592,y:y-6,width:38,height:48,'class':'hitbox'},c);
+   tx(c,630,y+24,lbl);
+   return pop;}
+ ISO.pop10=cart('MEX70AA010','cart10',280,'AA010');
+ ISO.pop12=cart('MEX70AA012','cart12',324,'AA012');
+ const r=comp(g,'MEX70AA005');
+ el('rect',{x:545,y:345,width:20,height:26,'class':'body',id:'hv70ru'},r);
+ el('rect',{x:565,y:345,width:20,height:26,'class':'body'},r);
+ boxBlock(r,545,345,20,26);boxPass(r,565,345,20,26);
+ ptri(r,533,354);spring(r,587,350);
+ el('rect',{x:531,y:341,width:62,height:34,'class':'hitbox'},r);
+ tx(r,536,386,'AA005 RU ESD valve');
+})();
+
+/* ----- MEX30 runner blade control block ----- */
+(function(){const g=$('blkMEX30');
+ const gp=comp(g,'MEX30AA001');
+ el('rect',{x:706,y:256,width:60,height:16,'class':'body',id:'ruPilot'},gp);
+ el('line',{x1:726,y1:256,x2:726,y2:272,stroke:'#49608a'},gp);
+ el('line',{x1:746,y1:256,x2:746,y2:272,stroke:'#49608a'},gp);
+ coil(gp,693,258);coil(gp,770,258);
+ el('rect',{x:688,y:252,width:96,height:24,'class':'hitbox'},gp);
+ tx(gp,690,250,'AA001 pilot (proportional)');
+ el('line',{x1:736,y1:272,x2:736,y2:288,stroke:'#8a7a3a','stroke-dasharray':'3 3'},g);
+ const gm=comp(g,'MEX30AA002');
+ for(let i=0;i<3;i++)el('rect',{x:701+i*26,y:288,width:26,height:32,'class':'body'},gm);
+ boxPass(gm,701,288,26,32);boxBlock(gm,727,288,26,32);boxCross(gm,753,288,26,32);
+ spring(gm,690,298);spring(gm,781,298);
+ ISO.ruSpool=el('rect',{x:727,y:288,width:26,height:32,fill:'rgba(255,210,63,.22)',stroke:'#ffd23f','stroke-width':1,id:'ruSpool'},gm);
+ el('rect',{x:686,y:284,width:102,height:42,'class':'hitbox'},gm);
+ tx(gm,696,340,'AA002 main stage 4/3');
+ portLbl(gm,694,300,'P');portLbl(gm,731,285,'O');portLbl(gm,731,331,'C');portLbl(gm,761,331,'T');
+ function thr(dataId,x,y,lbl){const c=comp(g,dataId);
+  el('path',{d:'M'+x+','+y+' q5,7 0,13 M'+(x+14)+','+y+' q-5,7 0,13',fill:'none',stroke:'#c9a84a','stroke-width':1.4},c);
+  el('path',{d:'M'+(x+3)+','+(y+20)+' l4,-4 4,4',fill:'none',stroke:'#c98','stroke-width':1.1},c);
+  el('rect',{x:x-4,y:y-5,width:24,height:30,'class':'hitbox'},c);
+  tx(c,x-8,y+36,lbl);}
+ thr('MEX30AA701',820,292,'AA701 open t.');
+ thr('MEX30AA702',820,332,'AA702 close t.');
+ const ck=comp(g,'MEX30AA003');
+ el('path',{d:'M794,347 L800,341 L806,347',fill:'none',stroke:'#c98','stroke-width':1.4},ck);
+ ISO.ruChk=el('circle',{cx:800,cy:345,r:4,fill:'#16233a',stroke:'#c98','stroke-width':1.3},ck);
+ el('line',{x1:800,y1:337,x2:800,y2:306,stroke:'#c9a84a','stroke-dasharray':'3 3'},ck);
+ el('rect',{x:789,y:333,width:22,height:18,'class':'hitbox'},ck);
+ tx(ck,772,364,'AA003 pilot check');
+})();
+
 /* ---------- build N2 racks, gate vanes, runner blades ---------- */
 (function(){
   [['n2rack16',165],['n2rack17',345]].forEach(([gid,x0])=>{const g=$(gid);
@@ -708,6 +809,20 @@ $('btnByp').onclick=()=>{S.byp=!S.byp;logEv('Bypass valve MEX30 AA602 '+(S.byp?'
 $('btnCool').onclick=()=>{S.cool=!S.cool;logEv('Cooling pump MEX14 AP001 '+(S.cool?'STARTED':'STOPPED'));};
 $('btnCW').onclick=()=>{S.cw=!S.cw;logEv('Cooling water solenoid MEX14 AA001 '+(S.cw?'OPEN':'CLOSED'));};
 
+/* MEX70 ESD solenoid manual toggle — de-energizing either channel trips the unit */
+function tglSol70(ch){const k='sol70'+ch,name='MEX70 AA00'+(ch==='a'?'1':'2');
+  if(S[k]){S[k]=false;trip('SOLENOID '+name+' DE-ENERGIZED (manual)');
+    logEv(name+' spring-shifts to trip position → pilot oil to hydraulic valve AA003 → cartridges open','a');}
+  else{S[k]=true;
+    logEv(name+' re-energized (coil pulls the spool back). The trip stays LATCHED — press RESET when gates are closed to clear it.','e');}}
+/* wire solenoid manual-control panel buttons */
+$('bS70a').onclick=()=>tglSol70('a');
+$('bS70b').onclick=()=>tglSol70('b');
+$('bS11').onclick=()=>$('btnUnl1').onclick();
+$('bS12').onclick=()=>$('btnUnl2').onclick();
+$('bS14').onclick=()=>$('btnCW').onclick();
+$('bS30').onclick=()=>$('btnHubSol').onclick();
+
 /* clicks on the schematic */
 const cycle={off:'on',on:'auto',auto:'off'};
 const CLICK={
@@ -719,8 +834,8 @@ const CLICK={
  MEX14AP001:()=>$('btnCool').onclick(),MEX14AA001:()=>$('btnCW').onclick(),
  MEX30AA004:()=>$('btnHubSol').onclick(),MEX30AA501:()=>$('btnIso1').onclick(),
  MEX30AA502:()=>$('btnIso2').onclick(),MEX30AA602:()=>$('btnByp').onclick(),
- MEX70AA001:()=>{if(S.sol70a){S.sol70a=false;trip('SOLENOID MEX70 AA001 DE-ENERGIZED (test)');}else logEv('Re-arm via RESET button','e');},
- MEX70AA002:()=>{if(S.sol70b){S.sol70b=false;trip('SOLENOID MEX70 AA002 DE-ENERGIZED (test)');}else logEv('Re-arm via RESET button','e');},
+ MEX70AA001:()=>tglSol70('a'),
+ MEX70AA002:()=>tglSol70('b'),
  MEA70AA201:()=>{S.ospdM=true;trip('MECHANICAL OVERSPEED DEVICE MEA70 AA201 (manual test)');}
 };
 function syncTgl(id,v){document.querySelectorAll('#'+id+' .btn').forEach(x=>x.classList.toggle('sel',x.dataset.v===v));}
@@ -840,6 +955,22 @@ function tick(){
 
 /* ================= RENDER ================= */
 function rot(el,a,cx,cy){el.setAttribute('transform','rotate('+a+' '+cx+' '+cy+')');}
+/* ISO symbol states: spool positions, solenoid shift, cartridge poppets, check balls */
+function renderISO(wgT,ruT){
+  const dWG=S.runaway?1:(S.esd?-1:(Math.abs(wgT-S.wg)>0.5&&S.press>=50?Math.sign(wgT-S.wg):0));
+  const dRU=S.runaway?1:(S.esd?-1:(Math.abs(ruT-S.ru)>0.5&&S.press>=45?Math.sign(ruT-S.ru):0));
+  ISO.wgSpool.setAttribute('x',311+26*(dWG>0?0:dWG<0?2:1));
+  ISO.ruSpool.setAttribute('x',701+26*(dRU>0?0:dRU<0?2:1));
+  /* solenoid position marker: energized = left (blocked/armed) box, spring = right (trip) box */
+  ISO.s70a.setAttribute('x',S.sol70a?480:502);
+  ISO.s70b.setAttribute('x',S.sol70b?526:548);
+  const dump=((S.esd&&S.wg>0.5)||(S.runaway&&S.wg<99.5))&&S.press>8;
+  ISO.hvMark.setAttribute('visibility',(S.esd||S.runaway)?'visible':'hidden');
+  ISO.pop10.setAttribute('transform',dump?'translate(0,-6)':'');
+  ISO.pop12.setAttribute('transform',dump?'translate(0,-6)':'');
+  ISO.checks.forEach(b=>{b.style.fill=(S.esd&&S.wg>0.5&&!S.runaway&&S.press>8)?'#ff5c5c':'#16233a';});
+  ISO.ruChk.style.fill=dRU!==0?'#ffd23f':'#16233a';
+}
 function render(wgT,ruT,dwg,dru,repl){
   /* pumps */
   $('pump1body').classList.toggle('runY',S.run1);rot($('pump1imp'),S.rotP1,170,620);
@@ -857,8 +988,7 @@ function render(wgT,ruT,dwg,dru,repl){
   $('cg201').classList.toggle('tripR',S.ospdM);
   $('wgPilot').classList.toggle('energ',Math.abs(wgT-S.wg)>0.5&&!S.esd);
   $('ruPilot').classList.toggle('energ',Math.abs(ruT-S.ru)>0.5&&!S.esd);
-  $('wgSpool').setAttribute('x',350-12+(wgT>S.wg+0.3?9:(wgT<S.wg-0.3?-9:0)));
-  $('ruSpool').setAttribute('x',740-12+(ruT>S.ru+0.3?9:(ruT<S.ru-0.3?-9:0)));
+  renderISO(wgT,ruT);
 
   /* accumulators */
   [['acc16oil','acc16pist',112],['acc17oil','acc17pist',292]].forEach(([o,p,x])=>{
@@ -897,13 +1027,17 @@ function render(wgT,ruT,dwg,dru,repl){
   setFlow('pN2a',(sup||consume)&&prs,C.N2,!(sup&&S.acc<99.5));
   setFlow('pN2b',(sup||consume)&&prs,C.N2,!(sup&&S.acc<99.5));
   setFlow('pHdrWG',prs&&(wgMv&&!S.esd),C.OIL);
-  setFlow('pHdrESD',S.esd&&S.press>8&&S.wg>0.5,C.SIG);
+  const dump=((S.esd&&S.wg>0.5)||(S.runaway&&S.wg<99.5))&&S.press>8;
+  setFlow('pHdrESD',dump,C.SIG);
+  setFlow('pCartP',dump,C.SIG);
+  setFlow('pChk1',S.esd&&S.wg>0.5&&!S.runaway&&S.press>8,C.DRN);
+  setFlow('pChk2',S.esd&&S.wg>0.5&&!S.runaway&&S.press>8,C.DRN);
   setFlow('pHdrRU',prs&&ruMv&&!S.esd,C.OIL);
   setFlow('pHdrRepl',repl,C.OIL);
   setFlow('pByp',repl&&S.byp,C.OIL);
   setFlow('pWGopen',wgMv||S.esd&&S.wg>0.5,C.CTL,dwg<0||S.esd);
   setFlow('pWGclose',wgMv&&!S.esd,C.CTL,dwg>0);
-  setFlow('pESDtoWG',S.esd&&S.press>8&&S.wg>0.5,C.SIG);
+  setFlow('pESDtoWG',dump,C.SIG);
   setFlow('pESDtoRU',S.esd&&S.press>8&&S.ru>0.5,C.SIG);
   setFlow('pRUopen',ruMv,C.CTL,dru<0);
   setFlow('pRUclose',ruMv,C.CTL,dru>0);
@@ -920,8 +1054,8 @@ function render(wgT,ruT,dwg,dru,repl){
   setFlow('pLkS1',S.lp1run,C.LEAK);setFlow('pLeak1',S.lp1run,C.LEAK);
   setFlow('pLkS2',S.lp2run,C.LEAK);setFlow('pLeak2',S.lp2run,C.LEAK);
   setFlow('pLeakHdr',S.lp1run||S.lp2run,C.LEAK);
-  setFlow('sPil1',S.sol70a&&prs,C.CTL);setFlow('sPil2',S.sol70b&&prs,C.CTL);
-  setFlow('sPil3',S.esd&&S.press>8,C.SIG);setFlow('sPil4',S.esd&&S.press>8,C.SIG);
+  setFlow('sPil1',!S.sol70a&&S.press>8,C.SIG);setFlow('sPil2',!S.sol70b&&S.press>8,C.SIG);
+  setFlow('sPil3',(S.esd||S.runaway)&&S.press>8,C.SIG);setFlow('sPil4',(S.esd||S.runaway)&&S.press>8,C.SIG);
   setFlow('sOspd',S.ospdM||S.ospdE,C.SIG);
   /* water through gates & runner */
   const wOn=S.wg>3;
@@ -959,6 +1093,12 @@ function render(wgT,ruT,dwg,dru,repl){
   $('btnByp').textContent=S.byp?'OPEN':'CLOSED';$('btnByp').classList.toggle('on',S.byp);
   $('btnCool').textContent=S.cool?'RUNNING':'OFF';$('btnCool').classList.toggle('on',S.cool);
   $('btnCW').textContent=S.cw?'OPEN':'CLOSED';$('btnCW').classList.toggle('on',S.cw);
+  $('bS70a').textContent=S.sol70a?'ENERGIZED ⚡':'DE-ENERGIZED';$('bS70a').classList.toggle('on',S.sol70a);$('bS70a').classList.toggle('offst',!S.sol70a);
+  $('bS70b').textContent=S.sol70b?'ENERGIZED ⚡':'DE-ENERGIZED';$('bS70b').classList.toggle('on',S.sol70b);$('bS70b').classList.toggle('offst',!S.sol70b);
+  $('bS11').textContent=S.ld1?'ENERGIZED · loaded':'DE-ENERG · bypass';$('bS11').classList.toggle('on',S.ld1);
+  $('bS12').textContent=S.ld2?'ENERGIZED · loaded':'DE-ENERG · bypass';$('bS12').classList.toggle('on',S.ld2);
+  $('bS14').textContent=S.cw?'ENERGIZED · open':'DE-ENERGIZED';$('bS14').classList.toggle('on',S.cw);
+  $('bS30').textContent=S.hubSol?'ENERGIZED · open':'DE-ENERGIZED';$('bS30').classList.toggle('on',S.hubSol);
   $('esdBtn').classList.toggle('active',S.esd);
   $('stSol70a').textContent=S.sol70a?'ENERGIZED ⚡':'DE-ENERGIZED';
   $('stSol70b').textContent=S.sol70b?'ENERGIZED ⚡':'DE-ENERGIZED';
