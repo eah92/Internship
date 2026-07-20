@@ -112,7 +112,7 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
   <span class="statusChip" id="chipUnit">UNIT STOPPED</span>
   <span class="statusChip" id="chipPress">0.0 bar</span>
   <span class="statusChip" id="chipSpeed">0 % n</span>
-  <span id="simCtl"><button class="btn" data-s="0" title="pause">⏸</button><button class="btn sel" data-s="1">1×</button><button class="btn" data-s="2">2×</button><button class="btn" data-s="4">4×</button></span>
+  <span id="simCtl"><button class="btn" data-s="0" title="pause">⏸</button><button class="btn sel" data-s="1">1×</button><button class="btn" data-s="2">2×</button><button class="btn" data-s="4">4×</button><button class="btn" id="zeroBtn" title="reset the whole simulation to zero start" style="border-color:#7a4040;color:#e09090">↺ ZERO START</button></span>
 </header>
 <div id="main">
 <div id="schemwrap">
@@ -155,8 +155,8 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
   <path class="pipe" id="pHdrRU"   d="M760,190 V282"/>
   <path class="pipe" id="pHdrRepl" d="M865,190 V455 H725 V470"/>
   <path class="pipe thin" id="pByp" d="M865,262 H900 V318 H865"/>
-  <path class="pipe" id="pWGopen"  d="M350,324 V355 H460 V415 H890 V320"/>
-  <path class="pipe" id="pWGclose" d="M350,282 V262 H1035 V300 H980"/>
+  <path class="pipe" id="pWGopen"  d="M350,324 V355 H460 V415 H900 V340"/>
+  <path class="pipe" id="pWGclose" d="M350,282 V262 H900 V246"/>
   <path class="pipe" id="pESDtoWG" d="M626,299 V343 M626,321 H660 V262"/>
   <path class="pipe" id="pESDtoRU" d="M581,358 H670 V325 H680"/>
   <path class="pipe" id="pRUopen"  d="M780,300 H876 V498"/>
@@ -189,7 +189,7 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
 </g>
 
 <!-- ======== ACCUMULATOR PLANT  EL 255.5 ======== -->
-<text class="blkttl" x="112" y="30">PRESSURE ACCUMULATOR PLANT (63 bar)</text>
+<text class="blkttl" x="112" y="30">PRESSURE ACCUMULATOR PLANT (120 bar)</text>
 <g class="comp" data-id="MEX16BB001">
   <rect class="hitbox" x="106" y="52" width="48" height="102"/>
   <rect class="body" x="110" y="60" width="40" height="90" rx="6"/>
@@ -220,7 +220,7 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
 <g class="comp" data-id="MEX17AA302"><rect class="hitbox" x="264" y="30" width="22" height="20"/><path d="M275,48 l8,-8 -16,0 z" fill="none" stroke="#8a6" stroke-width="1.5"/><text class="kkstxt" x="246" y="28">AA302</text></g>
 <g class="comp" data-id="MEX16CP101"><rect class="hitbox" x="468" y="150" width="24" height="24"/><circle cx="480" cy="162" r="9" class="body"/><text class="lbl" x="475" y="166" fill="#dbe6f5">P</text><text class="kkstxt" x="460" y="142">CP101</text></g>
 <g class="comp" data-id="MEX16CP102"><rect class="hitbox" x="493" y="150" width="24" height="24"/><circle cx="505" cy="162" r="9" class="body"/><text class="lbl" x="500" y="166" fill="#dbe6f5">P</text><text class="kkstxt" x="497" y="142">CP102</text></g>
-<text class="lblB" x="600" y="182">PRESSURE HEADER 63 bar</text>
+<text class="lblB" x="600" y="182">PRESSURE HEADER 120 bar · pump cut-in 109 / cut-out 120</text>
 
 <!-- ======== PUMP STATION + SUMP  EL 227.4 ======== -->
 <text class="blkttl" x="92" y="536">OIL PRESSURE SUPPLY UNIT</text>
@@ -329,11 +329,15 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
 <text class="blkttl" x="900" y="232">TURBINE · WICKET GATES + RUNNER</text>
 <ellipse cx="1000" cy="430" rx="165" ry="215" fill="none" stroke="#22314c" stroke-dasharray="4 6"/>
 <g class="comp" data-id="WGSERVO">
-  <rect class="hitbox" x="876" y="276" width="108" height="48"/>
-  <rect class="body2" x="880" y="280" width="100" height="40" rx="4"/>
-  <rect id="wgPiston" x="886" y="283" width="9" height="34" fill="#dbe6f5"/>
-  <line id="wgRod" x1="895" y1="300" x2="1039" y2="300" stroke="#9fb4d4" stroke-width="4"/>
-  <text class="kkstxt" x="878" y="334">WG SERVOMOTOR</text>
+  <rect class="hitbox" x="872" y="240" width="56" height="112"/>
+  <rect class="body2" x="880" y="246" width="40" height="94" rx="4"/>
+  <rect id="wgOil" x="883" y="334" width="34" height="3" fill="#c96a20"/>
+  <rect id="wgPiston" x="882" y="326" width="36" height="7" fill="#dbe6f5"/>
+  <rect id="wgWeight" x="888" y="316" width="24" height="9" fill="#33425c" stroke="#5b7194"/>
+  <line id="wgRod" x1="900" y1="326" x2="1039" y2="300" stroke="#9fb4d4" stroke-width="4"/>
+  <text class="lbl" x="924" y="258">▲ open</text>
+  <text class="lbl" x="924" y="338">▼ close (weight)</text>
+  <text class="kkstxt" x="852" y="360">WG SERVOMOTOR · MEA20 AE001 (vertical)</text>
 </g>
 <g class="comp" data-id="GATERING">
   <rect class="hitbox" x="1036" y="250" width="100" height="100"/>
@@ -387,7 +391,7 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
 <g transform="translate(950,30)">
   <rect class="blkbox" x="0" y="0" width="222" height="130"/>
   <text class="blkttl" x="8" y="14">LEGEND — oil / media colours</text>
-  <line x1="10" y1="26" x2="34" y2="26" stroke="#ff8c3a" stroke-width="3"/><text class="lbl" x="40" y="29">pressure oil 63 bar</text>
+  <line x1="10" y1="26" x2="34" y2="26" stroke="#ff8c3a" stroke-width="3"/><text class="lbl" x="40" y="29">pressure oil 120 bar</text>
   <line x1="10" y1="40" x2="34" y2="40" stroke="#ffd23f" stroke-width="3"/><text class="lbl" x="40" y="43">control oil → servomotors</text>
   <line x1="10" y1="54" x2="34" y2="54" stroke="#4da3ff" stroke-width="3"/><text class="lbl" x="40" y="57">drain / return oil</text>
   <line x1="10" y1="68" x2="34" y2="68" stroke="#b07cff" stroke-width="3"/><text class="lbl" x="40" y="71">leakage oil</text>
@@ -426,9 +430,27 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
     <div id="lessonTxt">Pick a lesson — each one operates the real switching sequence step by step and explains which valves move and where the oil flows.</div>
   </div>
 
+  <div class="sect"><h2>Alarms & protection</h2>
+    <div class="lamps">
+      <div class="lamp wn" id="alCP101"><i></i>MEX16 CP101 press LOW</div>
+      <div class="lamp" id="alCP102"><i></i>MEX16 CP102 press TOO LOW</div>
+      <div class="lamp wn" id="alCL101"><i></i>MEX10 CL101 sump HIGH</div>
+      <div class="lamp wn" id="alCL102"><i></i>MEX10 CL102 sump LOW</div>
+      <div class="lamp" id="alCL103"><i></i>MEX10 CL103 sump TOO LOW</div>
+      <div class="lamp" id="alLK102"><i></i>MEX18 CL102 leak tank HIGH</div>
+      <div class="lamp" id="alHUB"><i></i>MEX30 CL103 hub oil LOW</div>
+      <div class="lamp wn" id="alTEMP"><i></i>Oil temperature HIGH</div>
+      <div class="lamp" id="alOSPD-E"><i></i>Overspeed ELEC 115 RPM</div>
+      <div class="lamp" id="alOSPD-M"><i></i>MEA70 AA201 MECH 140 RPM</div>
+      <div class="lamp" id="alRUN"><i></i>RUNAWAY &gt;165 RPM — gates 90°</div>
+    </div>
+  </div>
+
+  <div class="sect"><h2>Event log</h2><div id="log"></div></div>
+
   <div class="sect"><h2>Oil pressure supply · MEX11 / MEX12 / MEX16 / MEX17</h2>
-    <div class="row"><label>Oil pump 1 <span class="kks">MEX11 AP001</span></label><div class="tgl3" id="p1mode"><button class="btn" data-v="off">OFF</button><button class="btn" data-v="on">ON</button><button class="btn sel" data-v="auto">AUTO</button></div></div>
-    <div class="row"><label>Oil pump 2 <span class="kks">MEX12 AP001</span></label><div class="tgl3" id="p2mode"><button class="btn" data-v="off">OFF</button><button class="btn" data-v="on">ON</button><button class="btn sel" data-v="auto">AUTO</button></div></div>
+    <div class="row"><label>Oil pump 1 <span class="kks">MEX11 AP001</span></label><div class="tgl3" id="p1mode"><button class="btn sel" data-v="off">OFF</button><button class="btn" data-v="on">ON</button><button class="btn" data-v="auto">AUTO</button></div></div>
+    <div class="row"><label>Oil pump 2 <span class="kks">MEX12 AP001</span></label><div class="tgl3" id="p2mode"><button class="btn sel" data-v="off">OFF</button><button class="btn" data-v="on">ON</button><button class="btn" data-v="auto">AUTO</button></div></div>
     <div class="row"><label>Unloader 1 <span class="kks">MEX11 AA001</span></label><button class="btn" id="btnUnl1">—</button></div>
     <div class="row"><label>Unloader 2 <span class="kks">MEX12 AA001</span></label><button class="btn" id="btnUnl2">—</button></div>
     <div class="row"><label>Accumulator charge <span class="kks">MEX16/17 BB001</span></label><div class="bar oil"><i id="barAcc"></i></div><span class="val" id="valAcc">0 %</span></div>
@@ -491,23 +513,6 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
     <div class="row"><label>Sump tank level <span class="kks">MEX10</span></label><div class="bar oil"><i id="barSump"></i></div><span class="val" id="valSump">0 %</span></div>
   </div>
 
-  <div class="sect"><h2>Alarms & protection</h2>
-    <div class="lamps">
-      <div class="lamp wn" id="alCP101"><i></i>MEX16 CP101 press LOW</div>
-      <div class="lamp" id="alCP102"><i></i>MEX16 CP102 press TOO LOW</div>
-      <div class="lamp wn" id="alCL101"><i></i>MEX10 CL101 sump HIGH</div>
-      <div class="lamp wn" id="alCL102"><i></i>MEX10 CL102 sump LOW</div>
-      <div class="lamp" id="alCL103"><i></i>MEX10 CL103 sump TOO LOW</div>
-      <div class="lamp" id="alLK102"><i></i>MEX18 CL102 leak tank HIGH</div>
-      <div class="lamp" id="alHUB"><i></i>MEX30 CL103 hub oil LOW</div>
-      <div class="lamp wn" id="alTEMP"><i></i>Oil temperature HIGH</div>
-      <div class="lamp" id="alOSPD-E"><i></i>Overspeed ELEC 115 RPM</div>
-      <div class="lamp" id="alOSPD-M"><i></i>MEA70 AA201 MECH 140 RPM</div>
-      <div class="lamp" id="alRUN"><i></i>RUNAWAY &gt;165 RPM — gates 90°</div>
-    </div>
-  </div>
-
-  <div class="sect"><h2>Event log</h2><div id="log"></div></div>
 </div>
 </div>
 
@@ -519,7 +524,7 @@ const C={OIL:'#ff8c3a',CTL:'#ffd23f',DRN:'#4da3ff',LEAK:'#b07cff',COOL:'#3ce0d0'
 
 /* ---------- component registry (tooltips) ---------- */
 const REG={
-MEX16BB001:['MEX16 BB001','Piston accumulator 1','Stores pressure oil (63 bar) for the servomotors. Nitrogen on top of the piston keeps the energy reserve — enough oil for emergency closing even with both pumps dead.'],
+MEX16BB001:['MEX16 BB001','Piston accumulator 1','Stores pressure oil (120 bar) for the servomotors. Nitrogen on top of the piston keeps the energy reserve — enough oil for emergency closing even with both pumps dead. Pumps cut in at ~109 bar and cut out at 120 bar.'],
 MEX17BB001:['MEX17 BB001','Piston accumulator 2','Second piston accumulator — redundancy for accumulator 1.'],
 MEX16BBN2:['MEX16 BB002-010','Nitrogen bottles ×9','N₂ gas cushion for accumulator 1 piston.'],
 MEX17BBN2:['MEX17 BB002-010','Nitrogen bottles ×9','N₂ gas cushion for accumulator 2 piston.'],
@@ -527,8 +532,8 @@ MEX16AA301:['MEX16 AA301','Oil safety valve acc.1','Relieves oil over-pressure o
 MEX16AA302:['MEX16 AA302','Air safety valve acc.1','Relieves N₂ over-pressure of accumulator 1.'],
 MEX17AA301:['MEX17 AA301','Oil safety valve acc.2','Relieves oil over-pressure of accumulator 2.'],
 MEX17AA302:['MEX17 AA302','Air safety valve acc.2','Relieves N₂ over-pressure of accumulator 2.'],
-MEX16CP101:['MEX16 CP101','Pressure switch — LOW','Alarm when system pressure < 52 bar (starts standby pump).'],
-MEX16CP102:['MEX16 CP102','Pressure switch — TOO LOW','< 45 bar: pressure no longer guarantees safe closing → unit trip.'],
+MEX16CP101:['MEX16 CP101','Pressure switch — LOW','Alarm when system pressure < 100 bar (starts the standby pump). Normal cycling is 109–120 bar.'],
+MEX16CP102:['MEX16 CP102','Pressure switch — TOO LOW','< 85 bar: pressure no longer guarantees safe closing → unit trip.'],
 MEX11AP001:['MEX11 AP001','Oil pump 1 (motor M01)','Main screw pump. CLICK to cycle OFF → ON → AUTO.'],
 MEX12AP001:['MEX12 AP001','Oil pump 2 (motor M01)','Standby screw pump, cuts in at lower pressure. CLICK to cycle mode.'],
 MEX11AA001:['MEX11 AA001','Pump 1 unloader solenoid','De-energized = pump recirculates to sump at no pressure (soft start / standby). CLICK to toggle.'],
@@ -575,7 +580,7 @@ MEX30AA004:['MEX30 AA004','Solenoid — hub tank replenishing','Tops up the runn
 MEX30BB001:['MEX30 BB001','Runner hub oil tank','Oil volume inside the hub for blade servomotor & sealing.'],
 MEX30CL103:['MEX30 CL103','Hub oil level TOO LOW switch',''],
 MEX30BP001:['MEX30 BP001','Throttle — hub tank',''],
-WGSERVO:['MEX20','Wicket gate servomotor','Double-acting cylinder rotating the distributor ring — the 8 wicket gates.'],
+WGSERVO:['MEA20 AE001','Wicket gate servomotor (vertical)','HP oil under the piston holds it UP = gates open. If system pressure is lost the piston FALLS under the closing weight and the gates shut — inherent fail-safe. Watch the orange oil column under the piston.'],
 GATERING:['—','Wicket gates (distributor)','Regulate water flow → turbine power. 0–90° opening; ~40° gives maximum output at 10 m head (optimum shifts with head). Forced to 90° on runaway >165 RPM.'],
 OILHEAD:['MEX30','Oil head / rotating distributor','Transfers open/close oil from the stationary piping into the rotating shaft.'],
 MEA70AA201:['MEA70 AA201','Mechanical overspeed device','Flyweight bolt on the shaft. A CONTINUOUS safety-oil flow passes here and holds the 2-stage check valves open — that is what keeps the governor working. At 140 RPM the flyweight vents this line to the LEAKAGE TANK → checks close → emergency close, all with zero electricity. CLICK = manual test trip.'],
@@ -584,14 +589,14 @@ RUNNER:['—','Kaplan runner','Blade pitch (−10°…+25°) set hydraulically t
 };
 
 /* ---------- state ---------- */
-const S={p1:'auto',p2:'auto',run1:false,run2:false,ld1:false,ld2:false,mUnl1:false,mUnl2:false,
+const S={p1:'off',p2:'off',run1:false,run2:false,ld1:false,ld2:false,mUnl1:false,mUnl2:false,
  acc:0,press:0,temp:35,
  wgSet:0,wg:0,wgGov:0,gov:false,ruMode:'auto',ruSet:0,ru:0,
  brk:false,spd:0,esd:false,cause:'—',sol70a:true,sol70b:true,etripEn:true,ospdE:false,ospdM:false,
  head:10,runaway:false,mw:0,
  hub:78,hubSol:false,iso1:true,iso2:true,byp:false,
  cool:false,cw:false,
- lp1:'auto',lp2:'auto',lp1run:false,lp2run:false,lp1l:false,lp2l:false,leak:25,sump:84,
+ lp1:'auto',lp2:'auto',lp1run:false,lp2run:false,lp1l:false,lp2l:false,leak:25,sump:92,
  rotP1:0,rotP2:0,rotC:0,rotL1:0,rotL2:0,rotR:0,p2latch:false};
 
 function logEv(m,cls){const d=document.createElement('div');if(cls)d.className=cls;
@@ -896,9 +901,9 @@ function alarm(id,on,msg){const el=$(id);if(!el)return;
 function tick(){
   /* ---- pumps & pressure ---- */
   if(S.p1==='on')S.run1=true;else if(S.p1==='off')S.run1=false;
-  else S.run1=(S.press<58)||(S.run1&&S.acc<99.5);
+  else S.run1=(S.press<109)||(S.run1&&S.acc<99.5);   /* cut-in 109 bar, cut-out 120 bar (acc full) */
   if(S.p2==='on')S.run2=true;else if(S.p2==='off')S.run2=false;
-  else{if(S.press<52)S.p2latch=true;if(S.acc>99.5)S.p2latch=false;S.run2=S.p2latch;}
+  else{if(S.press<100)S.p2latch=true;if(S.acc>99.5)S.p2latch=false;S.run2=S.p2latch;}
   S.ld1=S.run1&&!S.mUnl1&&S.acc<99.8;
   S.ld2=S.run2&&!S.mUnl2&&S.acc<99.8;
   const charge=(S.ld1?3.0:0)+(S.ld2?3.0:0);
@@ -913,32 +918,34 @@ function tick(){
   const wg0=S.wg;
   if(Math.abs(wgT-S.wg)>0.05){
     const dir=Math.sign(wgT-S.wg);
-    if((dir>0&&(S.press>=50||(S.runaway&&S.press>=8)))||(dir<0&&S.press>=8))
+    if((dir>0&&(S.press>=95||(S.runaway&&S.press>=15)))||(dir<0&&S.press>=15))
       S.wg=clamp(S.wg+dir*wgRate*DT,0,100);
   }
-  if(wgT>S.wg+0.5&&S.press<50&&!S.permLog){
-    logEv('INTERLOCK: control pressure < 50 bar — wicket gates blocked. Charge the accumulators first (MEX16 CP101).','e');S.permLog=true;}
-  if(S.press>=50)S.permLog=false;
+  /* no oil pressure under the piston → it falls under the closing weight */
+  if(S.press<15&&S.wg>0.05)S.wg=clamp(S.wg-100/12*DT,0,100);
+  if(wgT>S.wg+0.5&&S.press<95&&!S.permLog){
+    logEv('INTERLOCK: control pressure < 95 bar — wicket gates blocked. Charge the accumulators first (MEX16 CP101).','e');S.permLog=true;}
+  if(S.press>=95)S.permLog=false;
   const dwg=S.wg-wg0;
 
   let ruT=S.runaway?100:(S.esd?0:(S.ruMode==='auto'?(S.wg<15?0:clamp((S.wg-15)*1.4,0,100)):S.ruSet));
   const ru0=S.ru;
   if(Math.abs(ruT-S.ru)>0.05){
     const dir=Math.sign(ruT-S.ru);
-    if((dir>0&&S.press>=45)||(dir<0&&S.press>=8))
+    if((dir>0&&S.press>=90)||(dir<0&&S.press>=15))
       S.ru=clamp(S.ru+dir*(S.esd?100/10:100/20)*DT,0,100);
   }
   const dru=S.ru-ru0;
 
   /* ---- hub replenishing ---- */
-  const repl=S.press>40&&S.iso1&&S.iso2&&(S.hubSol||S.byp);
+  const repl=S.press>80&&S.iso1&&S.iso2&&(S.hubSol||S.byp);
   const replRate=repl?(S.hubSol?1.1:0.35):0;
-  S.hub=clamp(S.hub+replRate*DT*10-(0.006+Math.abs(dru)*0.6)*DT*10,0,100);
+  S.hub=clamp(S.hub+replRate*DT*10-(0.004+Math.abs(dru)*0.15)*DT*10,0,100);
 
   /* ---- accumulators (rates in %/s) ---- */
   const useRate=(S.press>5?0.08:0)+Math.abs(dwg)/DT*0.09+Math.abs(dru)/DT*0.05+(repl?0.5:0);
   S.acc=clamp(S.acc+(charge-useRate)*DT,0,100);
-  S.press=S.acc<=2?S.acc*10:20+43*S.acc/100;
+  S.press=S.acc<=2?S.acc*15:30+90*S.acc/100;   /* 120 bar at full charge; 109 bar cut-in ≈ 88 % */
 
   /* ---- speed (RPM) & power — head-dependent ---- */
   const hf=S.head/10;                                   /* head factor, 10 m nominal */
@@ -965,7 +972,7 @@ function tick(){
     logEv('WICKET GATES FORCED FULLY OPEN (90°) on accumulator oil to pass maximum flow with minimum pressure across the blades.','a');}
   if(S.spd>=115&&S.etripEn&&!S.ospdE&&!S.runaway){S.ospdE=true;trip('ELECTRICAL OVERSPEED 115 RPM');}
   if(S.spd>=140&&!S.ospdM&&!S.runaway){S.ospdM=true;trip('MECHANICAL OVERSPEED DEVICE MEA70 AA201 — 140 RPM');}
-  if(S.press<45&&S.wg>5&&!S.esd)trip('PRESSURE TOO LOW — MEX16 CP102');
+  if(S.press<85&&S.wg>5&&!S.esd)trip('PRESSURE TOO LOW — MEX16 CP102');
   if((!S.sol70a||!S.sol70b)&&!S.runaway)S.esd=true;
 
   /* ---- cooling / temperature ---- */
@@ -974,12 +981,14 @@ function tick(){
   S.temp=clamp(S.temp+(heat-coolQ+(35-S.temp)*0.008)*DT*10,20,90);
 
   /* ---- leakage & sump ---- */
-  S.leak=clamp(S.leak+((S.press>30?0.05:0.008)+(S.esd&&S.wg>1?0.1:0)+(S.ospdM&&S.press>10?0.12:0))*DT*10,0,100);
+  S.leak=clamp(S.leak+((S.press>60?0.05:0.008)+(S.esd&&S.wg>1?0.1:0)+(S.ospdM&&S.press>20?0.12:0))*DT*10,0,100);
   [['lp1','lp1run','lp1l'],['lp2','lp2run','lp2l']].forEach(([m,r,l])=>{
     if(S[m]==='on')S[r]=true;else if(S[m]==='off')S[r]=false;
     else{if(S.leak>70)S[l]=true;if(S.leak<20)S[l]=false;S[r]=S[l];}
     if(S[r])S.leak=clamp(S.leak-2.0*DT*10/10,0,100);});
-  S.sump=clamp(86-S.acc*0.22-S.leak*0.08-(S.hub-78)*0.05,0,100);
+  /* sump sized so a fully charged running system sits just above the minimum mark —
+     any additional loss immediately gives the CL102 LOW alarm */
+  S.sump=clamp(93-S.acc*0.34-S.leak*0.06-(S.hub-78)*0.05,0,100);
 
   /* rotation angles */
   if(S.run1)S.rotP1+=520*DT;if(S.run2)S.rotP2+=520*DT;if(S.cool)S.rotC+=420*DT;
@@ -993,20 +1002,20 @@ function tick(){
 function rot(el,a,cx,cy){el.setAttribute('transform','rotate('+a+' '+cx+' '+cy+')');}
 /* ISO symbol states: spool positions, solenoid shift, cartridge poppets, check balls */
 function renderISO(wgT,ruT){
-  const dWG=S.runaway?1:(S.esd?-1:(Math.abs(wgT-S.wg)>0.5&&S.press>=50?Math.sign(wgT-S.wg):0));
-  const dRU=S.runaway?1:(S.esd?-1:(Math.abs(ruT-S.ru)>0.5&&S.press>=45?Math.sign(ruT-S.ru):0));
+  const dWG=S.runaway?1:(S.esd?-1:(Math.abs(wgT-S.wg)>0.5&&S.press>=95?Math.sign(wgT-S.wg):0));
+  const dRU=S.runaway?1:(S.esd?-1:(Math.abs(ruT-S.ru)>0.5&&S.press>=90?Math.sign(ruT-S.ru):0));
   ISO.wgSpool.setAttribute('x',311+26*(dWG>0?0:dWG<0?2:1));
   ISO.ruSpool.setAttribute('x',701+26*(dRU>0?0:dRU<0?2:1));
   /* solenoid position marker: energized = left (blocked/armed) box, spring = right (trip) box */
   ISO.s70a.setAttribute('x',S.sol70a?480:502);
   ISO.s70b.setAttribute('x',S.sol70b?526:548);
-  const dump=((S.esd&&S.wg>0.5)||(S.runaway&&S.wg<99.5))&&S.press>8;
+  const dump=((S.esd&&S.wg>0.5)||(S.runaway&&S.wg<99.5))&&S.press>15;
   ISO.hvMark.setAttribute('visibility',(S.esd||S.runaway)?'visible':'hidden');
   ISO.pop10.setAttribute('transform',dump?'translate(0,-6)':'');
   ISO.pop12.setAttribute('transform',dump?'translate(0,-6)':'');
   /* 2-stage check valves: safety oil holds them OPEN; any trip closes them */
-  const safeOK=S.press>25&&!S.esd&&!S.runaway;
-  const esdDump=S.esd&&!S.ospdM&&S.wg>0.5&&S.press>8;
+  const safeOK=S.press>50&&!S.esd&&!S.runaway;
+  const esdDump=S.esd&&!S.ospdM&&S.wg>0.5&&S.press>15;
   ISO.checks.forEach(b=>{
     b.setAttribute('transform',safeOK?'translate(0,-3)':'');
     b.style.fill=safeOK?'#2c6e4f':(esdDump?'#b58900':'#16233a');
@@ -1048,10 +1057,14 @@ function render(wgT,ruT,dwg,dru,repl){
     $(o).setAttribute('y',y);$(o).setAttribute('height',h);
     $(p).setAttribute('y1',y-2);$(p).setAttribute('y2',y-2);});
 
-  /* servo & gates */
-  const px=886+(S.wg/100)*82;
-  $('wgPiston').setAttribute('x',px);
-  $('wgRod').setAttribute('x1',px+9);
+  /* servo & gates — vertical cylinder: HP oil below the piston holds it UP (open); it falls when pressure is lost */
+  const pistY=326-(S.wg/100)*72;
+  $('wgPiston').setAttribute('y',pistY);
+  $('wgWeight').setAttribute('y',pistY-10);
+  $('wgOil').setAttribute('y',pistY+7);
+  $('wgOil').setAttribute('height',Math.max(2,337-(pistY+7)));
+  $('wgOil').setAttribute('fill',S.press>15?'#c96a20':'#3a3226');
+  $('wgRod').setAttribute('y1',pistY);
   const open=S.wg/100;
   vanes.forEach((l,i)=>{const a=i*Math.PI/4,px2=1085+32*Math.cos(a),py=300+32*Math.sin(a);
     const va=a+Math.PI/2-open*1.1;
@@ -1066,7 +1079,7 @@ function render(wgT,ruT,dwg,dru,repl){
   const hh=54*S.hub/100;$('hubOil').setAttribute('y',527-hh);$('hubOil').setAttribute('height',Math.max(1,hh));
 
   /* ---- flows ---- */
-  const sup=S.ld1||S.ld2, prs=S.press>25;
+  const sup=S.ld1||S.ld2, prs=S.press>50;
   const wgMv=Math.abs(dwg)>0.001, ruMv=Math.abs(dru)>0.001;
   const consume=wgMv||ruMv||repl||(S.esd&&S.wg>0.5);
   setFlow('pSuc1',S.run1,C.OIL);setFlow('pDis1',S.ld1,C.OIL);
@@ -1079,25 +1092,25 @@ function render(wgT,ruT,dwg,dru,repl){
   setFlow('pN2a',(sup||consume)&&prs,C.N2,!(sup&&S.acc<99.5));
   setFlow('pN2b',(sup||consume)&&prs,C.N2,!(sup&&S.acc<99.5));
   setFlow('pHdrWG',prs&&(wgMv&&!S.esd),C.OIL);
-  const dump=((S.esd&&S.wg>0.5)||(S.runaway&&S.wg<99.5))&&S.press>8;
+  const dump=((S.esd&&S.wg>0.5)||(S.runaway&&S.wg<99.5))&&S.press>15;
   setFlow('pHdrESD',dump,C.SIG);
   setFlow('pCartP',dump,C.SIG);
   /* safety oil from the overspeed line: continuous in normal operation (holds 2-stage checks open);
      ESD → diverted through the checks to the SUMP; overspeed trip → vented to the LEAKAGE tank */
-  const safeOK=S.press>25&&!S.esd&&!S.runaway;
-  const esdDump=S.esd&&!S.ospdM&&S.wg>0.5&&S.press>8;
+  const safeOK=S.press>50&&!S.esd&&!S.runaway;
+  const esdDump=S.esd&&!S.ospdM&&S.wg>0.5&&S.press>15;
   setFlow('sOspd',(safeOK||esdDump)&&!S.ospdM,C.SAFE);
   setFlow('pSafeSump',esdDump,C.SAFE);
   setFlow('pChk1',esdDump,C.SAFE);
   setFlow('pChk2',esdDump,C.SAFE);
-  setFlow('pSafeLeak',S.ospdM&&S.press>10,C.SAFE);
+  setFlow('pSafeLeak',S.ospdM&&S.press>20,C.SAFE);
   setFlow('pHdrRU',prs&&ruMv&&!S.esd,C.OIL);
   setFlow('pHdrRepl',repl,C.OIL);
   setFlow('pByp',repl&&S.byp,C.OIL);
   setFlow('pWGopen',wgMv||S.esd&&S.wg>0.5,C.CTL,dwg<0||S.esd);
   setFlow('pWGclose',wgMv&&!S.esd,C.CTL,dwg>0);
   setFlow('pESDtoWG',dump,C.SIG);
-  setFlow('pESDtoRU',S.esd&&S.press>8&&S.ru>0.5,C.SIG);
+  setFlow('pESDtoRU',S.esd&&S.press>15&&S.ru>0.5,C.SIG);
   setFlow('pRUopen',ruMv,C.CTL,dru<0);
   setFlow('pRUclose',ruMv,C.CTL,dru>0);
   setFlow('pShaftO',ruMv,C.CTL,dru<0);
@@ -1113,8 +1126,8 @@ function render(wgT,ruT,dwg,dru,repl){
   setFlow('pLkS1',S.lp1run,C.LEAK);setFlow('pLeak1',S.lp1run,C.LEAK);
   setFlow('pLkS2',S.lp2run,C.LEAK);setFlow('pLeak2',S.lp2run,C.LEAK);
   setFlow('pLeakHdr',S.lp1run||S.lp2run,C.LEAK);
-  setFlow('sPil1',!S.sol70a&&S.press>8,C.SIG);setFlow('sPil2',!S.sol70b&&S.press>8,C.SIG);
-  setFlow('sPil3',(S.esd||S.runaway)&&S.press>8,C.SIG);setFlow('sPil4',(S.esd||S.runaway)&&S.press>8,C.SIG);
+  setFlow('sPil1',!S.sol70a&&S.press>15,C.SIG);setFlow('sPil2',!S.sol70b&&S.press>15,C.SIG);
+  setFlow('sPil3',(S.esd||S.runaway)&&S.press>15,C.SIG);setFlow('sPil4',(S.esd||S.runaway)&&S.press>15,C.SIG);
   /* water through gates & runner */
   const wOn=S.wg>3;
   [['wf1',wOn],['wf2',wOn],['wf3',wOn&&S.spd>3],['wf4',wOn&&S.spd>3]].forEach(([id,on])=>{
@@ -1122,8 +1135,8 @@ function render(wgT,ruT,dwg,dru,repl){
     el.style.stroke=on?C.WAT:'#1d3b52';el.style.opacity=on?0.35+0.65*S.wg/100:1;});
 
   /* ---- gauges / bars / chips ---- */
-  $('gPressArc').setAttribute('stroke-dashoffset',151*(1-clamp(S.press,0,80)/80));
-  rot($('gPressN'),clamp(S.press,0,80)/80*180,60,66);
+  $('gPressArc').setAttribute('stroke-dashoffset',151*(1-clamp(S.press,0,140)/140));
+  rot($('gPressN'),clamp(S.press,0,140)/140*180,60,66);
   $('gPressV').textContent=S.press.toFixed(1)+' bar';
   $('gSpdArc').setAttribute('stroke-dashoffset',151*(1-clamp(S.spd,0,180)/180));
   $('gSpdArc').setAttribute('stroke',S.spd>165?'#ff4d4d':(S.spd>115?'#ffb020':'#3fd68f'));
@@ -1172,8 +1185,8 @@ function render(wgT,ruT,dwg,dru,repl){
   $('chipSpeed').textContent=S.spd.toFixed(0)+' RPM · H '+S.head.toFixed(1)+' m';
 
   /* ---- alarms ---- */
-  alarm('alCP101',S.press<52&&S.press>1,'MEX16 CP101 — system pressure LOW (<52 bar)');
-  alarm('alCP102',S.press<45&&S.acc>0.5,'MEX16 CP102 — pressure TOO LOW (<45 bar)');
+  alarm('alCP101',S.press<100&&S.press>1,'MEX16 CP101 — system pressure LOW (<100 bar, standby pump starts)');
+  alarm('alCP102',S.press<85&&S.acc>0.5,'MEX16 CP102 — pressure TOO LOW (<85 bar)');
   alarm('alCL101',S.sump>90,'MEX10 CL101 — sump level HIGH');
   alarm('alCL102',S.sump<56&&S.sump>48,'MEX10 CL102 — sump level LOW');
   alarm('alCL103',S.sump<=48,'MEX10 CL103 — sump level TOO LOW');
@@ -1198,9 +1211,9 @@ const LESSONS={
 start:{name:'Normal start-up',steps:()=>[
  {txt:'START-UP · Everything begins at the SUMP TANK (MEX10 BB001, EL 245.0) — the reservoir all oil returns to. The unit is stopped, pressure 0.',dwell:5},
  {txt:'Oil pump 1 MEX11 AP001 starts (motor M01). Watch the suction line from the sump and the discharge — the unloader solenoid MEX11 AA001 loads the pump so it pumps against pressure instead of recirculating.',act:()=>setPump('p1','on','p1mode'),dwell:5},
- {txt:'Oil pump 2 MEX12 AP001 goes to AUTO — it is the standby pump and will cut in by pressure switch MEX16 CP101 if pressure ever drops below 52 bar.',act:()=>setPump('p2','auto','p2mode'),dwell:4},
- {txt:'The pump charges the PISTON ACCUMULATORS MEX16/MEX17 BB001. Oil pushes the piston up against the nitrogen cushion (bottles BB002–BB010). The N₂ stores the energy for emergency closing.',until:()=>S.press>=58,dwell:6},
- {txt:'System pressure ≥ 58 bar — the energy reserve is ready. ESD solenoids MEX70 AA001 + AA002 are energized (armed): the shutdown chain is healthy.',dwell:5},
+ {txt:'Oil pump 2 MEX12 AP001 goes to AUTO — it is the standby pump and will cut in by pressure switch MEX16 CP101 if pressure ever drops below 100 bar.',act:()=>setPump('p2','auto','p2mode'),dwell:4},
+ {txt:'The pump charges the PISTON ACCUMULATORS MEX16/MEX17 BB001 towards 120 bar. Oil pushes the piston up against the nitrogen cushion (bottles BB002–BB010). Watch the SUMP TANK level fall as oil fills the accumulators and piping — the tank is sized so the running level sits right at the minimum mark, making any small loss instantly visible.',until:()=>S.press>=109,dwell:6},
+ {txt:'System pressure ≥ 109 bar (pump cut-in level) — the energy reserve is ready. From now on the pumps cycle: load below 109 bar, unload at 120 bar. ESD solenoids MEX70 AA001 + AA002 are energized (armed).',dwell:5},
  {txt:'Opening command: proportional pilot valve MEX20 AA001 strokes main stage AA002 — pressure oil flows through throttle AA701 to the OPEN side of the wicket-gate servomotor. Gates to 15 % for start.',act:()=>setWG(15),dwell:5},
  {txt:'Water accelerates the runner. The runner-blade cam (MEX30) keeps blades at start position while speed rises to nominal…',until:()=>S.spd>=95,dwell:4},
  {txt:'Speed ≈ 100 RPM (nominal) → generator breaker closes, unit synchronized to the grid.',act:()=>{if(!S.esd&&S.spd>=90){S.brk=true;logEv('Generator breaker CLOSED — unit on grid','g');}},dwell:4},
@@ -1280,6 +1293,7 @@ document.querySelectorAll('#simCtl .btn').forEach(b=>b.onclick=()=>{
   simMul=+b.dataset.s;
   document.querySelectorAll('#simCtl .btn').forEach(x=>x.classList.toggle('sel',x===b));
   logEv(simMul===0?'Simulation PAUSED':'Simulation speed '+simMul+'×');});
+$('zeroBtn').onclick=()=>{if(confirm('Reset the whole simulation to ZERO START? Everything switches off and all levels/pressures return to initial state.'))location.reload();};
 logEv('Simulator ready. Use the GUIDED LESSONS panel (right) — start with “1 · Normal start-up” — or drive everything yourself.','g');
 logEv('Hover components on the diagram for their KKS code & function; click pumps / solenoids / valves to switch them.','g');
 setInterval(()=>{for(let i=0;i<simMul;i++){tick();lessonTick();}},60);
