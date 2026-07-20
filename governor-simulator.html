@@ -184,6 +184,8 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
   <path class="pipe thin" id="sPil3" d="M550,316 H611 V272"/>
   <path class="pipe thin" id="sPil4" d="M503,332 V354 H530"/>
   <path class="pipe thin" id="sOspd" d="M952,480 V440 H620 V392"/>
+  <path class="pipe thin" id="pSafeSump" d="M620,392 H680 V412"/>
+  <path class="pipe thin" id="pSafeLeak" d="M952,486 V570 H926"/>
 </g>
 
 <!-- ======== ACCUMULATOR PLANT  EL 255.5 ======== -->
@@ -375,7 +377,7 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
   <rect class="hitbox" x="686" y="466" width="78" height="68"/>
   <rect class="body2" x="690" y="470" width="70" height="60" rx="5"/>
   <rect id="hubOil" x="693" y="495" width="64" height="32" fill="#7a4a1d" rx="3"/>
-  <text class="kkstxt" x="688" y="464">MEX30 BB001 HUB OIL TANK</text>
+  <text class="kkstxt" x="764" y="482">MEX30 BB001 HUB OIL TANK</text>
 </g>
 <g class="comp" data-id="MEX30CL103"><rect class="hitbox" x="700" y="534" width="60" height="16"/><rect id="lampCL103H" class="body" x="702" y="536" width="10" height="10"/><text class="kkstxt" x="716" y="545">CL103 lo-lo</text></g>
 <g class="comp" data-id="MEX30BP001"><rect class="hitbox" x="712" y="548" width="28" height="22"/><path d="M719,552 q5,7 0,13 M733,552 q-5,7 0,13" fill="none" stroke="#c9a84a" stroke-width="1.4"/><text class="kkstxt" x="742" y="564">BP001</text></g>
@@ -383,7 +385,7 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
 
 <!-- legend -->
 <g transform="translate(950,30)">
-  <rect class="blkbox" x="0" y="0" width="222" height="118"/>
+  <rect class="blkbox" x="0" y="0" width="222" height="130"/>
   <text class="blkttl" x="8" y="14">LEGEND — oil / media colours</text>
   <line x1="10" y1="26" x2="34" y2="26" stroke="#ff8c3a" stroke-width="3"/><text class="lbl" x="40" y="29">pressure oil 63 bar</text>
   <line x1="10" y1="40" x2="34" y2="40" stroke="#ffd23f" stroke-width="3"/><text class="lbl" x="40" y="43">control oil → servomotors</text>
@@ -392,6 +394,7 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
   <line x1="10" y1="82" x2="34" y2="82" stroke="#3ce0d0" stroke-width="3"/><text class="lbl" x="40" y="85">cooling oil / water</text>
   <line x1="10" y1="96" x2="34" y2="96" stroke="#59d97e" stroke-width="3"/><text class="lbl" x="40" y="99">nitrogen N₂</text>
   <line x1="120" y1="96" x2="144" y2="96" stroke="#ff5c5c" stroke-width="2" stroke-dasharray="4 3"/><text class="lbl" x="150" y="99">trip signal</text>
+  <line x1="10" y1="110" x2="34" y2="110" stroke="#7fe0a8" stroke-width="2" stroke-dasharray="6 4"/><text class="lbl" x="40" y="113">safety oil — holds 2-stage checks open</text>
 </g>
 </svg>
 </div>
@@ -512,7 +515,7 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
 "use strict";
 const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>v<a?a:(v>b?b:v);
-const C={OIL:'#ff8c3a',CTL:'#ffd23f',DRN:'#4da3ff',LEAK:'#b07cff',COOL:'#3ce0d0',WAT:'#41b0ff',N2:'#59d97e',SIG:'#ff5c5c'};
+const C={OIL:'#ff8c3a',CTL:'#ffd23f',DRN:'#4da3ff',LEAK:'#b07cff',COOL:'#3ce0d0',WAT:'#41b0ff',N2:'#59d97e',SIG:'#ff5c5c',SAFE:'#7fe0a8'};
 
 /* ---------- component registry (tooltips) ---------- */
 const REG={
@@ -550,10 +553,10 @@ MEX20AT001:['MEX20 AT001','Dual filter, governor control oil','Twin change-over 
 MEX20AA001:['MEX20 AA001','WG proportional valve — pilot','Electrical governor command → hydraulic pilot pressure.'],
 MEX20AA002:['MEX20 AA002','WG proportional valve — main stage','4/3 valve directing pressure oil to open/close side of WG servomotor.'],
 MEX20AA701:['MEX20 AA701','Throttle — WG opening time','Sets wicket-gate opening time (~28 s).'],
-MEX20AA003:['MEX20 AA003','Pilot-operated check valve (ESD) 1/4','Normally blocks; the ESD pilot signal opens it so emergency oil bypasses the proportional-valve 2nd stage. Ball glows red while passing.'],
-MEX20AA004:['MEX20 AA004','Pilot-operated check valve (ESD) 2/4','Redundant path of the ESD bypass bridge around main stage AA002.'],
-MEX20AA005:['MEX20 AA005','Pilot-operated check valve (ESD) 3/4','Redundant path of the ESD bypass bridge around main stage AA002.'],
-MEX20AA006:['MEX20 AA006','Pilot-operated check valve (ESD) 4/4','Redundant path of the ESD bypass bridge around main stage AA002.'],
+MEX20AA003:['MEX20 AA003','2-stage check valve 1/4','Pilot-operated check in the proportional-valve path. Continuous SAFETY OIL from the overspeed line forces it OPEN (green, lifted ball) so control oil reaches the proportional valve. Any trip cuts the safety oil → it CLOSES. See the big detail animation, top centre.'],
+MEX20AA004:['MEX20 AA004','2-stage check valve 2/4','Held open by safety oil in normal operation; closes on ESD/overspeed, isolating the proportional-valve 2nd stage.'],
+MEX20AA005:['MEX20 AA005','2-stage check valve 3/4','Held open by safety oil in normal operation; closes on ESD/overspeed, isolating the proportional-valve 2nd stage.'],
+MEX20AA006:['MEX20 AA006','2-stage check valve 4/4','Held open by safety oil in normal operation; on ESD the safety oil is dumped through these checks to the SUMP tank.'],
 MEX70AA001:['MEX70 AA001','ESD solenoid 1','Energized = armed. De-energize (CLICK) → emergency shutdown. Fail-safe.'],
 MEX70AA002:['MEX70 AA002','ESD solenoid 2','Redundant ESD solenoid — either one dropping trips the unit. CLICK to test.'],
 MEX70AA003:['MEX70 AA003','ESD hydraulic valve','Pilot-operated stage between solenoids and cartridge valves.'],
@@ -575,7 +578,7 @@ MEX30BP001:['MEX30 BP001','Throttle — hub tank',''],
 WGSERVO:['MEX20','Wicket gate servomotor','Double-acting cylinder rotating the distributor ring — the 8 wicket gates.'],
 GATERING:['—','Wicket gates (distributor)','Regulate water flow → turbine power. 0–90° opening; ~40° gives maximum output at 10 m head (optimum shifts with head). Forced to 90° on runaway >165 RPM.'],
 OILHEAD:['MEX30','Oil head / rotating distributor','Transfers open/close oil from the stationary piping into the rotating shaft.'],
-MEA70AA201:['MEA70 AA201','Mechanical overspeed device','Flyweight bolt on the shaft, trips at 140 RPM even with no electricity. Above 165 RPM the runaway logic takes over and OPENS the gates instead. CLICK = manual test trip.'],
+MEA70AA201:['MEA70 AA201','Mechanical overspeed device','Flyweight bolt on the shaft. A CONTINUOUS safety-oil flow passes here and holds the 2-stage check valves open — that is what keeps the governor working. At 140 RPM the flyweight vents this line to the LEAKAGE TANK → checks close → emergency close, all with zero electricity. CLICK = manual test trip.'],
 MEA70CG201:['MEA70 CG201','Overspeed device position switch','Signals the tripped position of MEA70 AA201.'],
 RUNNER:['—','Kaplan runner','Blade pitch (−10°…+25°) set hydraulically through the hub servomotor.']
 };
@@ -647,16 +650,49 @@ function portLbl(p,x,y,s){tx(p,x,y,s,'lbl');}
 /* ----- MEX20 AA003-006 pilot-operated ESD check valves ----- */
 (function(){const g=$('blkChecks');
  el('rect',{x:648,y:404,width:60,height:74,'class':'blkbox'},g);
- tx(g,556,398,'MEX20 AA003–006 · ESD pilot checks','blkttl');
+ tx(g,528,398,'MEX20 AA003–006 · 2-STAGE CHECK VALVES','blkttl');
+ tx(g,540,410,'held OPEN by safety oil from overspeed line','lbl');
  const ids=['MEX20AA003','MEX20AA004','MEX20AA005','MEX20AA006'];
  const pos=[[670,432],[670,458],[690,432],[690,458]];
  ISO.checks=[];
  pos.forEach((pt,i)=>{const c=comp(g,ids[i]);
    el('path',{d:'M'+(pt[0]-6)+','+(pt[1]+5)+' L'+pt[0]+','+(pt[1]-1)+' L'+(pt[0]+6)+','+(pt[1]+5),fill:'none',stroke:'#c98','stroke-width':1.4},c);
    const ball=el('circle',{cx:pt[0],cy:pt[1]-5,r:4,fill:'#16233a',stroke:'#c98','stroke-width':1.3},c);
-   el('line',{x1:pt[0]+(i<2?-15:8),y1:pt[1]-5,x2:pt[0]+(i<2?-7:15),y2:pt[1]-5,stroke:'#ff5c5c','stroke-dasharray':'3 3'},c);
+   el('line',{x1:pt[0]+(i<2?-15:8),y1:pt[1]-5,x2:pt[0]+(i<2?-7:15),y2:pt[1]-5,stroke:'#7fe0a8','stroke-dasharray':'3 3'},c);
    el('rect',{x:pt[0]-9,y:pt[1]-12,width:18,height:20,'class':'hitbox'},c);
    ISO.checks.push(ball);});
+})();
+
+/* ----- BIG ANIMATED DETAIL: 2-stage (pilot-operated) check valve ----- */
+(function(){const SVG=document.querySelector('#schem svg');const g=el('g',{id:'inset2stage'},SVG);
+ el('rect',{x:600,y:26,width:290,height:152,'class':'blkbox'},g);
+ tx(g,608,40,'2-STAGE CHECK VALVE · MEX20 AA003–006','blkttl');
+ tx(g,608,52,'pilot-operated: SAFETY OIL from the overspeed line forces it open','lbl');
+ /* main flow channel */
+ el('path',{d:'M606,100 H660',stroke:'#33425c','stroke-width':3,fill:'none'},g);
+ el('path',{d:'M800,100 H872 l-6,-4 m6,4 l-6,4',stroke:'#33425c','stroke-width':3,fill:'none','stroke-linecap':'round'},g);
+ tx(g,604,90,'control oil','lbl');
+ tx(g,806,90,'→ to proportional valve','lbl');
+ /* valve body */
+ el('rect',{x:660,y:72,width:140,height:56,'class':'body2'},g);
+ /* seat (V opening to the left) */
+ el('path',{d:'M722,76 L740,100 L722,124',stroke:'#5b7194','stroke-width':2,fill:'none'},g);
+ /* spring behind ball */
+ el('path',{d:'M762,100 l6,-5 6,10 6,-10 6,10 6,-5 h6',stroke:'#8aa2c6','stroke-width':1.4,fill:'none'},g);
+ /* pilot piston pushing the ball off its seat */
+ ISO.insRod=el('line',{x1:668,y1:100,x2:726,y2:100,stroke:'#7fe0a8','stroke-width':5,'stroke-linecap':'round'},g);
+ el('rect',{x:662,y:86,width:14,height:28,'class':'body'},g);
+ el('line',{x1:669,y1:128,x2:669,y2:142,stroke:'#7fe0a8','stroke-dasharray':'5 4','stroke-width':2},g);
+ tx(g,608,150,'SAFETY OIL pilot ▲','lbl').setAttribute('fill','#7fe0a8');
+ /* ball */
+ ISO.insBall=el('circle',{cx:748,cy:100,r:11,fill:'#24344f',stroke:'#9fb4d4','stroke-width':1.6},g);
+ /* animated flow overlay through the valve */
+ ISO.insFlow=el('path',{d:'M606,100 H872','class':'flow off'},g);
+ ISO.insFlow.style.stroke='#ffd23f';
+ ISO.insState=tx(g,806,116,'HELD OPEN','lblB');
+ ISO.insState.setAttribute('fill','#3fd68f');
+ ISO.insL=tx(g,608,162,'OVERSPEED trip → safety oil vents to LEAKAGE TANK','lbl');
+ ISO.insS=tx(g,608,174,'ESD trip → safety oil dumped through checks to SUMP TANK','lbl');
 })();
 
 /* ----- MEX70 emergency shutdown block ----- */
@@ -938,7 +974,7 @@ function tick(){
   S.temp=clamp(S.temp+(heat-coolQ+(35-S.temp)*0.008)*DT*10,20,90);
 
   /* ---- leakage & sump ---- */
-  S.leak=clamp(S.leak+((S.press>30?0.05:0.008)+(S.esd&&S.wg>1?0.1:0))*DT*10,0,100);
+  S.leak=clamp(S.leak+((S.press>30?0.05:0.008)+(S.esd&&S.wg>1?0.1:0)+(S.ospdM&&S.press>10?0.12:0))*DT*10,0,100);
   [['lp1','lp1run','lp1l'],['lp2','lp2run','lp2l']].forEach(([m,r,l])=>{
     if(S[m]==='on')S[r]=true;else if(S[m]==='off')S[r]=false;
     else{if(S.leak>70)S[l]=true;if(S.leak<20)S[l]=false;S[r]=S[l];}
@@ -968,8 +1004,24 @@ function renderISO(wgT,ruT){
   ISO.hvMark.setAttribute('visibility',(S.esd||S.runaway)?'visible':'hidden');
   ISO.pop10.setAttribute('transform',dump?'translate(0,-6)':'');
   ISO.pop12.setAttribute('transform',dump?'translate(0,-6)':'');
-  ISO.checks.forEach(b=>{b.style.fill=(S.esd&&S.wg>0.5&&!S.runaway&&S.press>8)?'#ff5c5c':'#16233a';});
+  /* 2-stage check valves: safety oil holds them OPEN; any trip closes them */
+  const safeOK=S.press>25&&!S.esd&&!S.runaway;
+  const esdDump=S.esd&&!S.ospdM&&S.wg>0.5&&S.press>8;
+  ISO.checks.forEach(b=>{
+    b.setAttribute('transform',safeOK?'translate(0,-3)':'');
+    b.style.fill=safeOK?'#2c6e4f':(esdDump?'#b58900':'#16233a');
+    b.style.stroke=safeOK?'#7fe0a8':'#c98';});
   ISO.ruChk.style.fill=dRU!==0?'#ffd23f':'#16233a';
+  /* big detail inset animation */
+  ISO.insBall.setAttribute('cx',safeOK?748:733);
+  ISO.insRod.setAttribute('x2',safeOK?726:706);
+  ISO.insFlow.classList.toggle('off',!safeOK);
+  ISO.insState.textContent=safeOK?'HELD OPEN':'CLOSED';
+  ISO.insState.setAttribute('fill',safeOK?'#3fd68f':'#ff5c5c');
+  ISO.insL.setAttribute('fill',S.ospdM?'#b07cff':'#51648a');
+  ISO.insL.style.fontWeight=S.ospdM?'700':'400';
+  ISO.insS.setAttribute('fill',(S.esd&&!S.ospdM)?'#4da3ff':'#51648a');
+  ISO.insS.style.fontWeight=(S.esd&&!S.ospdM)?'700':'400';
 }
 function render(wgT,ruT,dwg,dru,repl){
   /* pumps */
@@ -1030,8 +1082,15 @@ function render(wgT,ruT,dwg,dru,repl){
   const dump=((S.esd&&S.wg>0.5)||(S.runaway&&S.wg<99.5))&&S.press>8;
   setFlow('pHdrESD',dump,C.SIG);
   setFlow('pCartP',dump,C.SIG);
-  setFlow('pChk1',S.esd&&S.wg>0.5&&!S.runaway&&S.press>8,C.DRN);
-  setFlow('pChk2',S.esd&&S.wg>0.5&&!S.runaway&&S.press>8,C.DRN);
+  /* safety oil from the overspeed line: continuous in normal operation (holds 2-stage checks open);
+     ESD → diverted through the checks to the SUMP; overspeed trip → vented to the LEAKAGE tank */
+  const safeOK=S.press>25&&!S.esd&&!S.runaway;
+  const esdDump=S.esd&&!S.ospdM&&S.wg>0.5&&S.press>8;
+  setFlow('sOspd',(safeOK||esdDump)&&!S.ospdM,C.SAFE);
+  setFlow('pSafeSump',esdDump,C.SAFE);
+  setFlow('pChk1',esdDump,C.SAFE);
+  setFlow('pChk2',esdDump,C.SAFE);
+  setFlow('pSafeLeak',S.ospdM&&S.press>10,C.SAFE);
   setFlow('pHdrRU',prs&&ruMv&&!S.esd,C.OIL);
   setFlow('pHdrRepl',repl,C.OIL);
   setFlow('pByp',repl&&S.byp,C.OIL);
@@ -1056,7 +1115,6 @@ function render(wgT,ruT,dwg,dru,repl){
   setFlow('pLeakHdr',S.lp1run||S.lp2run,C.LEAK);
   setFlow('sPil1',!S.sol70a&&S.press>8,C.SIG);setFlow('sPil2',!S.sol70b&&S.press>8,C.SIG);
   setFlow('sPil3',(S.esd||S.runaway)&&S.press>8,C.SIG);setFlow('sPil4',(S.esd||S.runaway)&&S.press>8,C.SIG);
-  setFlow('sOspd',S.ospdM||S.ospdE,C.SIG);
   /* water through gates & runner */
   const wOn=S.wg>3;
   [['wf1',wOn],['wf2',wOn],['wf3',wOn&&S.spd>3],['wf4',wOn&&S.spd>3]].forEach(([id,on])=>{
@@ -1158,7 +1216,7 @@ stop:{name:'Normal shutdown',steps:()=>[
 ]},
 esd:{name:'Emergency shutdown',steps:()=>[
  {txt:'EMERGENCY SHUTDOWN · The fail-safe chain: MEX70 AA001+AA002 (redundant solenoids) → hydraulic valve AA003 → cartridge valves AA010+AA012. Any solenoid dropping out = trip. Triggering now…',dwell:6},
- {txt:'TRIP! Solenoids de-energize, the cartridge valves open wide: accumulator oil goes STRAIGHT to the wicket-gate close side through the ESD check valves MEX20 AA003–006 — the proportional valve is bypassed completely.',act:()=>trip('LESSON — ESD DEMONSTRATION'),dwell:6},
+ {txt:'TRIP! Solenoids de-energize → the SAFETY OIL from the overspeed line is diverted through the 2-stage check valves to the SUMP TANK (watch the green line change). The checks CLOSE, cutting the proportional valve off, while the cartridge valves pass accumulator oil straight to the close side.',act:()=>trip('LESSON — ESD DEMONSTRATION'),dwell:7},
  {txt:'Gates slam shut in ~8 s (vs ~22 s normal). MEX70 AA005 simultaneously drives the runner blades closed. This works with zero electricity — pure stored nitrogen energy.',until:()=>S.wg<1,dwell:6},
  {txt:'Gates closed, speed collapsing. The trip stays LATCHED until you press RESET (solenoids re-energize only when it is safe).',until:()=>S.spd<10,dwell:5},
  {txt:'✔ Press RESET TRIP to re-arm, then run Lesson 1 to restart. That is the whole point of the accumulators: closing energy is always available.',dwell:8},
