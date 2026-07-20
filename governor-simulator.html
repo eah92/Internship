@@ -494,6 +494,7 @@ text{font-family:'Segoe UI',Arial,sans-serif;fill:var(--dim);user-select:none}
   </div>
 
   <div class="sect"><h2>Runner hub oil · MEX30</h2>
+    <div class="row"><label>Replenish control <i>(AUTO: opens &lt;70 %, closes at 95 %)</i></label><div class="tgl3" id="hubModeT"><button class="btn sel" data-v="auto">AUTO</button><button class="btn" data-v="man">MANUAL</button></div></div>
     <div class="row"><label>Replenish solenoid <span class="kks">MEX30 AA004</span></label><button class="btn" id="btnHubSol">CLOSED</button></div>
     <div class="row"><label>Isolating valves <span class="kks">AA501 / AA502</span></label><button class="btn" id="btnIso1">AA501</button><button class="btn" id="btnIso2">AA502</button></div>
     <div class="row"><label>Bypass <span class="kks">AA602</span></label><button class="btn" id="btnByp">CLOSED</button></div>
@@ -576,7 +577,7 @@ MEX30AA702:['MEX30 AA702','Throttle — RU closing time',''],
 MEX30AA501:['MEX30 AA501','Isolating valve — hub replenishing','CLICK to open/close.'],
 MEX30AA502:['MEX30 AA502','Isolating valve — hub replenishing','CLICK to open/close.'],
 MEX30AA602:['MEX30 AA602','Bypass valve — hub replenishing','Manual bypass around solenoid AA004. CLICK to open/close.'],
-MEX30AA004:['MEX30 AA004','Solenoid — hub tank replenishing','Tops up the runner hub oil tank from the pressure header. CLICK to open/close.'],
+MEX30AA004:['MEX30 AA004','Solenoid — hub tank replenishing','Tops up the runner hub oil tank from the pressure header. In AUTO it is level-controlled: opens below 70 %, closes at 95 %. CLICK to take manual control.'],
 MEX30BB001:['MEX30 BB001','Runner hub oil tank','Oil volume inside the hub for blade servomotor & sealing.'],
 MEX30CL103:['MEX30 CL103','Hub oil level TOO LOW switch',''],
 MEX30BP001:['MEX30 BP001','Throttle — hub tank',''],
@@ -594,7 +595,7 @@ const S={p1:'off',p2:'off',run1:false,run2:false,ld1:false,ld2:false,mUnl1:false
  wgSet:0,wg:0,wgGov:0,gov:false,ruMode:'auto',ruSet:0,ru:0,
  brk:false,spd:0,esd:false,cause:'—',sol70a:true,sol70b:true,etripEn:true,ospdE:false,ospdM:false,
  head:10,runaway:false,mw:0,
- hub:78,hubSol:false,iso1:true,iso2:true,byp:false,
+ hub:78,hubSol:false,hubMode:'auto',iso1:true,iso2:true,byp:false,
  cool:false,cw:false,
  lp1:'auto',lp2:'auto',lp1run:false,lp2run:false,lp1l:false,lp2l:false,leak:25,sump:92,
  rotP1:0,rotP2:0,rotC:0,rotL1:0,rotL2:0,rotR:0,p2latch:false};
@@ -843,7 +844,13 @@ $('btnEtrip').onclick=()=>{S.etripEn=!S.etripEn;const b=$('btnEtrip');
   b.classList.toggle('on',S.etripEn);b.classList.toggle('offst',!S.etripEn);
   b.textContent=S.etripEn?'ENABLED':'DISABLED';
   logEv('Electrical overspeed trip (115 RPM) '+(S.etripEn?'ENABLED':'DISABLED — mechanical MEA70 AA201 (140 RPM) is now the only protection!'),S.etripEn?'g':'e');};
-$('btnHubSol').onclick=()=>{S.hubSol=!S.hubSol;logEv('Hub replenish solenoid MEX30 AA004 '+(S.hubSol?'OPEN':'CLOSED'));};
+$('btnHubSol').onclick=()=>{
+  if(S.hubMode==='auto'){S.hubMode='man';syncTgl('hubModeT','man');
+    logEv('Hub replenish control switched to MANUAL (operator took over)','e');}
+  S.hubSol=!S.hubSol;logEv('Hub replenish solenoid MEX30 AA004 '+(S.hubSol?'OPEN':'CLOSED'));};
+document.querySelectorAll('#hubModeT .btn').forEach(b=>{b.onclick=()=>{S.hubMode=b.dataset.v;
+  syncTgl('hubModeT',S.hubMode);
+  logEv('Hub replenish control → '+(S.hubMode==='auto'?'AUTO (level-controlled from CL103/level signal)':'MANUAL'));};});
 $('btnIso1').onclick=()=>{S.iso1=!S.iso1;logEv('Isolating valve MEX30 AA501 '+(S.iso1?'OPEN':'CLOSED'));};
 $('btnIso2').onclick=()=>{S.iso2=!S.iso2;logEv('Isolating valve MEX30 AA502 '+(S.iso2?'OPEN':'CLOSED'));};
 $('btnByp').onclick=()=>{S.byp=!S.byp;logEv('Bypass valve MEX30 AA602 '+(S.byp?'OPEN':'CLOSED'));};
@@ -937,7 +944,13 @@ function tick(){
   }
   const dru=S.ru-ru0;
 
-  /* ---- hub replenishing ---- */
+  /* ---- hub replenishing (AUTO: level-controlled like the real plant) ---- */
+  if(S.hubMode==='auto'){
+    if(!S.hubSol&&S.hub<70&&S.press>80&&S.iso1&&S.iso2){
+      S.hubSol=true;logEv('AUTO: hub oil tank level low — replenish solenoid MEX30 AA004 OPEN','g');}
+    if(S.hubSol&&S.hub>=95){
+      S.hubSol=false;logEv('AUTO: hub oil tank full — replenish solenoid MEX30 AA004 CLOSED','g');}
+  }
   const repl=S.press>80&&S.iso1&&S.iso2&&(S.hubSol||S.byp);
   const replRate=repl?(S.hubSol?1.1:0.35):0;
   S.hub=clamp(S.hub+replRate*DT*10-(0.004+Math.abs(dru)*0.15)*DT*10,0,100);
@@ -1243,10 +1256,10 @@ rej:{name:'Load rejection / overspeed',steps:()=>[
 ]},
 repl:{name:'Hub oil replenishing',steps:()=>[
  {txt:'HUB OIL · The runner hub is oil-filled (tank MEX30 BB001) for the blade servomotor and to keep water out through the blade seals. Slow loss is normal — level switch MEX30 CL103 warns when TOO LOW.',dwell:6},
- {txt:'Replenishing path: pressure header → isolating valves AA501/AA502 → solenoid AA004 → throttle BP001 → hub tank. Opening the solenoid now (needs system pressure — run Lesson 1 first if the bar does not move).',act:()=>{S.iso1=true;S.iso2=true;S.hubSol=true;logEv('MEX30 AA501/AA502 open, solenoid AA004 OPEN','g');},dwell:6},
+ {txt:'Replenishing path: pressure header → isolating valves AA501/AA502 → solenoid AA004 → throttle BP001 → hub tank. Normally this runs in AUTO from the level signal — switching to MANUAL for the demonstration and opening the solenoid (needs system pressure — run Lesson 1 first if the bar does not move).',act:()=>{S.hubMode='man';syncTgl('hubModeT','man');S.iso1=true;S.iso2=true;S.hubSol=true;logEv('MEX30 AA501/AA502 open, solenoid AA004 OPEN (manual demo)','g');},dwell:6},
  {txt:'Watch the purple-orange line from the header to the hub tank and the level bar rising. The manual bypass AA602 exists for solenoid failure.',until:()=>S.hub>=95,dwell:5},
  {txt:'Tank full — solenoid closes again.',act:()=>{S.hubSol=false;logEv('MEX30 AA004 CLOSED','g');},dwell:4},
- {txt:'✔ In the real plant this happens automatically from the CL103 level signal.',dwell:6},
+ {txt:'✔ Handing back to AUTO: from now on the level signal does this by itself — solenoid AA004 opens below 70 % and closes at 95 %, exactly like the real plant.',act:()=>{S.hubMode='auto';syncTgl('hubModeT','auto');},dwell:6},
 ]},
 cool:{name:'Oil cooling circuit',steps:()=>[
  {txt:'COOLING · Pumping work heats the oil. Watch the temperature bar — above 55 °C the alarm comes.',dwell:5},
