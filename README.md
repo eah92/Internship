@@ -1,4 +1,74 @@
-# Kaplan Bulb Turbine — Governor Hydraulic System Simulator
+# Hydropower Teaching Simulators
+
+This repository holds two self-contained, no-dependency HTML teaching tools.
+Open either file directly in any modern browser (Chrome / Edge / Firefox) — no
+server, build step or libraries required.
+
+| File | What it is |
+|---|---|
+| [`hydro-bernoulli-simulator.html`](hydro-bernoulli-simulator.html) | **Penstock & turbine — Bernoulli hydraulics simulator** (see below) |
+| [`governor-simulator.html`](governor-simulator.html) | Kaplan bulb-turbine governor hydraulic-system simulator |
+
+---
+
+## Penstock & Turbine — Bernoulli Hydraulics Simulator
+
+A physics-informed, steady-state model of a two-reservoir hydropower scheme:
+a **headrace** (upper reservoir) and **tailrace** (lower reservoir) joined by a
+**penstock** with a **turbine** in the line. It solves the extended Bernoulli
+(energy) equation *with real losses* and turbine head, updating a live
+cross-section, numeric readouts and grade-line charts as you drive the controls.
+
+### The physics
+
+Energy balance between the two free surfaces (both at atmospheric pressure,
+both effectively still because the reservoirs are large):
+
+```
+z₁ + p₁/ρg + V₁²/2g  =  z₂ + p₂/ρg + V₂²/2g  +  h_turbine + h_loss
+        ⟶        H_gross = h_turbine + h_loss
+```
+
+* **Head loss** `h_loss = (f·L/D + ΣK)·V²/2g` — Darcy–Weisbach friction plus
+  entrance/exit/bend minor losses. The Darcy factor `f` is found from the
+  **Swamee–Jain** correlation (laminar `64/Re` below Re = 2300) and iterated
+  with the flow so it stays consistent with velocity and temperature.
+* **Turbine + wicket gate** behave as a variable nozzle,
+  `Q = C_d·A_throat·(gate) · √(2g·H_net)`, so closing the gate throttles the
+  flow and re-partitions the available head. Shaft power `P = η·ρg·Q·H_net`.
+* **Water properties** (density, viscosity, vapour pressure) are interpolated
+  from standard tables at the chosen temperature; **pipe roughness** ε comes
+  from the selected material.
+
+### User-controllable inputs
+
+* Gross head between the two free surfaces
+* Intake depth below the upper surface, and outlet depth below the tailwater
+  (negative = discharge above tailwater)
+* Penstock length, draft length and inside diameter
+* Pipe material (PVC → riveted steel) and water temperature
+* Wicket-gate opening, turbine throat diameter and efficiency
+* Minor-loss coefficients and turbine discharge coefficient (assumptions)
+
+### What it computes
+
+Flow rate, pipe velocity, Reynolds number and flow regime, friction factor,
+net head, head-loss breakdown, turbine **inlet/outlet pressures** (gauge and
+absolute), pressure drop across the turbine, hydraulic and shaft power, NPSH and
+Thoma cavitation number — plus **Energy- and Hydraulic-Grade-Line** and
+**power-vs-gate** charts.
+
+### Warnings
+
+The tool flags **cavitation** (minimum absolute pressure reaching the water's
+vapour pressure, or low Thoma σ), **backflow / no-flow** (tailrace at or above
+the headrace), a **closed gate**, high penstock velocity, and laminar/
+transitional flow. This is a steady-state teaching model — it does not resolve
+water-hammer transients or real turbine efficiency curves; values are indicative.
+
+---
+
+## Kaplan Bulb Turbine — Governor Hydraulic System Simulator
 
 Interactive HTML teaching model of the turbine & governor control system
 (ANDRITZ Hydro drawing **NBE-102-02-001**, New Bong Escape HPP).

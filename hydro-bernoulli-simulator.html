@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Penstock &amp; Turbine — Bernoulli Hydraulics Simulator</title>
+</head>
+<body>
+<style>
+/* ============================ Design tokens ============================ */
+:root{
+  color-scheme: light dark;
+  --bg:#e9eef4; --grad1:#eef3f8; --grad2:#dfe7f0;
+  --surface:#ffffff; --surface-2:#f3f7fb; --surface-3:#e9f0f7;
+  --line:#d3dde8; --line-2:#c2cfdd;
+  --ink:#132030; --ink-2:#4d5f77; --ink-3:#7d8ea4;
+  --accent:#2a78d6; --accent-soft:rgba(42,120,214,.14);
+  --water:#2f88d4; --water-2:#7fc0ee; --water-deep:#1c5fa8;
+  --turbine:#c67c10; --turbine-2:#e3a93a;
+  --steel:#8ea3b8; --steel-2:#b7c6d6; --earth:#c9bfb0; --earth-2:#b7ab98;
+  --egl:#2a78d6; --hgl:#eb6834; --pipeln:#7d8ea4;
+  --ok:#0f7a45; --ok-bg:rgba(15,122,69,.12);
+  --warn:#b5730a; --warn-bg:rgba(181,115,10,.14);
+  --crit:#c62f2c; --crit-bg:rgba(198,47,44,.13);
+  --sky1:#cfe0f2; --sky2:#e7eef7;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono","JetBrains Mono","Cascadia Code",Menlo,Consolas,monospace;
+  --shadow:0 1px 2px rgba(20,40,70,.06),0 8px 24px rgba(20,40,70,.07);
+  --radius:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0a121c; --grad1:#0c1522; --grad2:#0a1017;
+    --surface:#111c29; --surface-2:#16243550; --surface-3:#182739;
+    --line:#26374c; --line-2:#324a63;
+    --ink:#e7eef8; --ink-2:#9fb1c7; --ink-3:#66788e;
+    --accent:#3987e5; --accent-soft:rgba(57,135,229,.18);
+    --water:#3d97e0; --water-2:#2b6fb0; --water-deep:#8cc4f0;
+    --turbine:#e3a93a; --turbine-2:#f0c268;
+    --steel:#607890; --steel-2:#42566c; --earth:#3a3527; --earth-2:#2c281d;
+    --egl:#3987e5; --hgl:#d95926; --pipeln:#7d8ea4;
+    --ok:#37b87a; --ok-bg:rgba(55,184,122,.14);
+    --warn:#e0a92e; --warn-bg:rgba(224,169,46,.15);
+    --crit:#f0605d; --crit-bg:rgba(240,96,93,.15);
+    --sky1:#132436; --sky2:#0e1a28;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="light"]{
+  color-scheme: light;
+  --bg:#e9eef4; --grad1:#eef3f8; --grad2:#dfe7f0;
+  --surface:#ffffff; --surface-2:#f3f7fb; --surface-3:#e9f0f7;
+  --line:#d3dde8; --line-2:#c2cfdd; --ink:#132030; --ink-2:#4d5f77; --ink-3:#7d8ea4;
+  --accent:#2a78d6; --accent-soft:rgba(42,120,214,.14);
+  --water:#2f88d4; --water-2:#7fc0ee; --water-deep:#1c5fa8;
+  --turbine:#c67c10; --turbine-2:#e3a93a; --steel:#8ea3b8; --steel-2:#b7c6d6;
+  --earth:#c9bfb0; --earth-2:#b7ab98; --egl:#2a78d6; --hgl:#eb6834; --pipeln:#7d8ea4;
+  --ok:#0f7a45; --ok-bg:rgba(15,122,69,.12); --warn:#b5730a; --warn-bg:rgba(181,115,10,.14);
+  --crit:#c62f2c; --crit-bg:rgba(198,47,44,.13); --sky1:#cfe0f2; --sky2:#e7eef7;
+  --shadow:0 1px 2px rgba(20,40,70,.06),0 8px 24px rgba(20,40,70,.07);
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#0a121c; --grad1:#0c1522; --grad2:#0a1017;
+  --surface:#111c29; --surface-2:#16243550; --surface-3:#182739;
+  --line:#26374c; --line-2:#324a63; --ink:#e7eef8; --ink-2:#9fb1c7; --ink-3:#66788e;
+  --accent:#3987e5; --accent-soft:rgba(57,135,229,.18);
+  --water:#3d97e0; --water-2:#2b6fb0; --water-deep:#8cc4f0;
+  --turbine:#e3a93a; --turbine-2:#f0c268; --steel:#607890; --steel-2:#42566c;
+  --earth:#3a3527; --earth-2:#2c281d; --egl:#3987e5; --hgl:#d95926; --pipeln:#7d8ea4;
+  --ok:#37b87a; --ok-bg:rgba(55,184,122,.14); --warn:#e0a92e; --warn-bg:rgba(224,169,46,.15);
+  --crit:#f0605d; --crit-bg:rgba(240,96,93,.15); --sky1:#132436; --sky2:#0e1a28;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:var(--sans); color:var(--ink);
+  background:linear-gradient(160deg,var(--grad1),var(--grad2));
+  min-height:100vh; line-height:1.45; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1500px;margin:0 auto;padding:18px 20px 60px}
+
+/* ============================ Header ============================ */
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.brand{display:flex;flex-direction:column;gap:3px}
+.brand .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.brand h1{font-size:22px;font-weight:650;letter-spacing:-.01em;line-height:1.1}
+.brand p{font-size:12.5px;color:var(--ink-2);max-width:60ch}
+.tools{display:flex;gap:8px;align-items:center}
+.btn{font-family:var(--sans);font-size:12.5px;color:var(--ink-2);background:var(--surface);
+  border:1px solid var(--line);border-radius:9px;padding:7px 12px;cursor:pointer;transition:.15s;display:inline-flex;gap:6px;align-items:center}
+.btn:hover{border-color:var(--accent);color:var(--ink)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ============================ Layout ============================ */
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 372px;gap:16px;align-items:start}
+@media(max-width:1080px){.layout{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card h2{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-2);font-weight:650;
+  padding:12px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.card h2 .hint{font-weight:500;letter-spacing:0;text-transform:none;color:var(--ink-3);font-size:11px}
+
+/* ============================ Scene ============================ */
+.stage{overflow:hidden}
+#scene{display:block;width:100%;height:auto;background:
+  linear-gradient(180deg,var(--sky2),var(--sky1));}
+.scene-legend{display:flex;gap:16px;flex-wrap:wrap;padding:9px 16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink-2)}
+.scene-legend span{display:inline-flex;align-items:center;gap:6px}
+.swatch{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+/* SVG element classes (theme-driven) */
+.s-water{fill:var(--water);opacity:.34}
+.s-water-line{stroke:var(--water-deep);stroke-width:2;fill:none;opacity:.6}
+.s-earth{fill:var(--earth);opacity:.55}
+.s-pipe{stroke:var(--steel);fill:none;stroke-linejoin:round;stroke-linecap:round}
+.s-pipe-in{stroke:var(--steel-2);fill:none;stroke-linejoin:round;stroke-linecap:round}
+.s-flow{stroke:var(--water-2);fill:none;stroke-linecap:round;opacity:.95}
+.s-flow.run{stroke-dasharray:2 15;animation:flow 1s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-17}}
+.s-dim{stroke:var(--ink-2);stroke-width:1.2;fill:none}
+.s-dim-tick{stroke:var(--ink-2);stroke-width:1.2}
+.s-datum{stroke:var(--ink-3);stroke-width:1.2;stroke-dasharray:2 4;fill:none}
+.s-lbl{fill:var(--ink-2);font:500 12px var(--sans)}
+.s-lbl-sm{fill:var(--ink-3);font:500 11px var(--sans)}
+.s-val{fill:var(--ink);font:600 12.5px var(--mono)}
+.s-turb-body{fill:var(--surface-3);stroke:var(--steel);stroke-width:1.5}
+.s-runner{fill:none;stroke:var(--turbine);stroke-width:2.4}
+.s-runner-c{fill:var(--turbine);opacity:.18}
+.s-runner.spin{transform-origin:center;animation:spin 2.4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.s-gate-bg{fill:var(--surface-2);stroke:var(--line-2);stroke-width:1}
+.s-gate-fill{fill:var(--turbine);opacity:.85}
+.s-callout{fill:var(--surface);stroke:var(--line-2);stroke-width:1}
+.s-callout-t{fill:var(--ink);font:600 11px var(--mono)}
+.s-callout-k{fill:var(--ink-3);font:500 9.5px var(--sans)}
+.s-arrow{fill:var(--water-deep);opacity:.8}
+.cav-glow{fill:var(--crit);opacity:.5;animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.15}50%{opacity:.55}}
+@media (prefers-reduced-motion: reduce){
+  .s-flow.run,.s-runner.spin,.cav-glow{animation:none}
+}
+
+/* ============================ Controls ============================ */
+.controls{display:flex;flex-direction:column;gap:14px;padding:14px}
+.cgroup{border:1px solid var(--line);border-radius:10px;background:var(--surface-2);overflow:hidden}
+.cgroup>summary,.cgroup>.ghead{list-style:none;cursor:default;padding:9px 13px;font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--accent);font-weight:650;background:var(--surface-3);border-bottom:1px solid var(--line)}
+.cgroup>summary{cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.cgroup>summary::-webkit-details-marker{display:none}
+.cgroup>summary::after{content:"▾";color:var(--ink-3);font-size:11px}
+.cgroup:not([open])>summary::after{content:"▸"}
+.cbody{padding:11px 13px;display:flex;flex-direction:column;gap:13px}
+.ctrl{display:flex;flex-direction:column;gap:5px}
+.ctrl .lab{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12px;color:var(--ink-2)}
+.ctrl .lab .v{font-family:var(--mono);font-size:12.5px;color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ctrl .lab .v .u{color:var(--ink-3);font-weight:500;font-size:11px;margin-left:1px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:3px;
+  background:var(--line-2);outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+  background:var(--accent);border:2px solid var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.25);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--accent);
+  border:2px solid var(--surface);cursor:pointer}
+input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+select{width:100%;font-family:var(--sans);font-size:12.5px;color:var(--ink);background:var(--surface);
+  border:1px solid var(--line-2);border-radius:8px;padding:7px 9px;cursor:pointer}
+select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+/* ============================ Readouts ============================ */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}
+@media(max-width:720px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:13px 15px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi .k{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.kpi .big{font-family:var(--mono);font-size:27px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums;line-height:1.15;margin-top:3px}
+.kpi .big .u{font-size:13px;color:var(--ink-3);font-weight:500;margin-left:3px}
+.kpi.accent{border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.kpi.accent .big{color:var(--accent)}
+.status-pill{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:650;padding:6px 11px;border-radius:20px;margin-top:5px}
+.status-pill .dot{width:9px;height:9px;border-radius:50%;background:currentColor;box-shadow:0 0 0 4px color-mix(in srgb,currentColor 22%,transparent)}
+.status-pill.ok{color:var(--ok);background:var(--ok-bg)}
+.status-pill.warn{color:var(--warn);background:var(--warn-bg)}
+.status-pill.crit{color:var(--crit);background:var(--crit-bg)}
+
+/* warnings */
+.warnbox{display:flex;flex-direction:column;gap:9px;padding:14px 16px}
+.warn-item{display:flex;gap:11px;padding:11px 13px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);align-items:flex-start}
+.warn-item .ic{flex:none;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;margin-top:1px}
+.warn-item.ok .ic{background:var(--ok)} .warn-item.warn .ic{background:var(--warn)} .warn-item.crit .ic{background:var(--crit)} .warn-item.info .ic{background:var(--ink-3)}
+.warn-item.crit{border-color:color-mix(in srgb,var(--crit) 40%,var(--line));background:var(--crit-bg)}
+.warn-item.warn{border-color:color-mix(in srgb,var(--warn) 35%,var(--line));background:var(--warn-bg)}
+.warn-item .t{font-size:13px;font-weight:650;color:var(--ink)}
+.warn-item .m{font-size:12px;color:var(--ink-2);margin-top:1px}
+
+/* detail tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:10px;padding:6px 16px 16px}
+.tile{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface-2)}
+.tile .k{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:600;display:flex;justify-content:space-between}
+.tile .val{font-family:var(--mono);font-size:19px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:3px;color:var(--ink)}
+.tile .val .u{font-size:11px;color:var(--ink-3);font-weight:500;margin-left:2px}
+.tile .sub{font-size:11px;color:var(--ink-2);margin-top:3px;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.tile.hot .val{color:var(--crit)} .tile.warmv .val{color:var(--warn)}
+
+/* charts */
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+@media(max-width:900px){.charts{grid-template-columns:1fr}}
+.chartwrap{position:relative;padding:8px 12px 12px}
+.chartwrap svg{display:block;width:100%;height:auto;overflow:visible}
+.c-grid{stroke:var(--line);stroke-width:1;opacity:.7}
+.c-axis{stroke:var(--line-2);stroke-width:1.2}
+.c-tick{fill:var(--ink-3);font:500 10px var(--mono);font-variant-numeric:tabular-nums}
+.c-atitle{fill:var(--ink-2);font:600 11px var(--sans)}
+.c-egl{stroke:var(--egl);stroke-width:2.2;fill:none;stroke-linejoin:round;stroke-linecap:round}
+.c-hgl{stroke:var(--hgl);stroke-width:2.2;fill:none;stroke-linejoin:round;stroke-linecap:round}
+.c-pipe{stroke:var(--pipeln);stroke-width:1.6;fill:none;stroke-dasharray:5 4;opacity:.85}
+.c-datum{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:2 4;opacity:.7}
+.c-fill-pos{fill:var(--accent);opacity:.09}
+.c-fill-neg{fill:var(--crit);opacity:.16}
+.c-line{stroke:var(--accent);stroke-width:2.2;fill:none;stroke-linejoin:round}
+.c-area{fill:var(--accent);opacity:.11}
+.c-op{fill:var(--accent);stroke:var(--surface);stroke-width:2}
+.c-max{fill:none;stroke:var(--turbine);stroke-width:2}
+.c-dlabel{font:600 11px var(--sans)}
+.c-pool{fill:var(--water);opacity:.28}
+.c-crosshair{stroke:var(--ink-3);stroke-width:1;stroke-dasharray:3 3;opacity:.8}
+.chart-tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line-2);
+  border-radius:8px;padding:7px 9px;font-size:11px;box-shadow:var(--shadow);opacity:0;transition:opacity .1s;z-index:5;min-width:120px}
+.chart-tip .th{font-weight:650;font-size:11px;color:var(--ink);margin-bottom:4px;font-family:var(--mono)}
+.chart-tip .tr{display:flex;justify-content:space-between;gap:12px;font-size:11px}
+.chart-tip .tr .lg{display:inline-flex;align-items:center;gap:5px;color:var(--ink-2)}
+.chart-tip .tr .vv{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--ink)}
+.chart-tip .dotc{width:8px;height:8px;border-radius:2px;display:inline-block}
+
+footer.notes{margin-top:22px;padding:16px 18px;border:1px dashed var(--line-2);border-radius:var(--radius);
+  background:var(--surface-2);font-size:12px;color:var(--ink-2)}
+footer.notes h3{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2);margin-bottom:8px}
+footer.notes ul{margin:0 0 0 18px;display:flex;flex-direction:column;gap:4px}
+footer.notes code{font-family:var(--mono);background:var(--surface-3);padding:1px 5px;border-radius:4px;font-size:11px;color:var(--ink)}
+.eq{font-family:var(--mono);color:var(--ink);background:var(--surface-3);border:1px solid var(--line);
+  border-radius:8px;padding:8px 11px;margin:8px 0;font-size:12px;overflow-x:auto;white-space:nowrap}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="eyebrow">Hydropower · Fluid Mechanics</span>
+      <h1>Penstock &amp; Turbine — Bernoulli Hydraulics Simulator</h1>
+      <p>Steady-flow energy balance between two reservoirs through a penstock and turbine, solved with the extended
+         Bernoulli equation including friction, minor losses and turbine head. Drive the controls; the section,
+         readouts and grade lines update live.</p>
+    </div>
+    <div class="tools">
+      <button class="btn" id="resetBtn" title="Restore defaults">↺ Reset</button>
+      <button class="btn" id="themeBtn" title="Toggle light / dark">◐ Theme</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <!-- LEFT: schematic -->
+    <section class="card stage">
+      <h2>System cross-section <span class="hint" id="sceneHint">headrace → penstock → turbine → tailrace</span></h2>
+      <svg id="scene" viewBox="0 0 1080 600" preserveAspectRatio="xMidYMid meet" role="img"
+           aria-label="Cross-section of the two-reservoir penstock and turbine system"></svg>
+      <div class="scene-legend">
+        <span><i class="swatch" style="background:var(--water)"></i>Water</span>
+        <span><i class="swatch" style="background:var(--steel)"></i>Penstock (steel)</span>
+        <span><i class="swatch" style="background:var(--turbine)"></i>Turbine runner + wicket gate</span>
+        <span><i class="swatch" style="background:var(--earth)"></i>Ground</span>
+        <span style="margin-left:auto;color:var(--ink-3)">Flow animation speed ∝ pipe velocity</span>
+      </div>
+    </section>
+
+    <!-- RIGHT: controls -->
+    <aside class="card">
+      <h2>Controls <span class="hint">drag to explore</span></h2>
+      <div class="controls" id="controls"></div>
+    </aside>
+  </div>
+
+  <!-- KPI summary -->
+  <div class="kpis" id="kpis"></div>
+
+  <!-- Warnings -->
+  <section class="card">
+    <h2>Warnings &amp; operating status</h2>
+    <div class="warnbox" id="warnbox"></div>
+  </section>
+
+  <!-- Detail tiles -->
+  <section class="card" style="margin-top:16px">
+    <h2>Computed quantities <span class="hint">turbine inlet / outlet · pipe · fluid</span></h2>
+    <div class="tiles" id="tiles"></div>
+  </section>
+
+  <!-- Charts -->
+  <div class="charts">
+    <section class="card">
+      <h2>Energy &amp; hydraulic grade lines <span class="hint">along the flow path</span></h2>
+      <div class="chartwrap"><svg id="profile" viewBox="0 0 640 320"></svg><div class="chart-tip" id="tipProfile"></div></div>
+    </section>
+    <section class="card">
+      <h2>Shaft power vs wicket-gate opening <span class="hint">current settings held</span></h2>
+      <div class="chartwrap"><svg id="power" viewBox="0 0 640 320"></svg><div class="chart-tip" id="tipPower"></div></div>
+    </section>
+  </div>
+
+  <footer class="notes">
+    <h3>Model &amp; assumptions</h3>
+    <div class="eq">z₁ + p₁/ρg + V₁²/2g  =  z₂ + p₂/ρg + V₂²/2g  +  h_turbine  +  h_loss &nbsp;&nbsp;⟶&nbsp;&nbsp; H_gross = h_turbine + h_loss</div>
+    <ul>
+      <li>Both reservoir surfaces are at atmospheric pressure and (being large) essentially stationary, so V₁ ≈ V₂ ≈ 0 and levels are held constant.</li>
+      <li>Head loss <code>h_loss = (f·L/D + ΣK)·V²/2g</code>; Darcy friction factor <code>f</code> from the Swamee–Jain correlation (laminar <code>64/Re</code> below Re = 2300), iterated with the flow so it stays consistent with velocity and temperature.</li>
+      <li>The turbine + wicket gate act as a variable nozzle: <code>Q = C_d·A_throat·(gate)·√(2g·H_net)</code>, so closing the gate throttles the flow and re-partitions the head. Shaft power <code>P = η·ρg·Q·H_net</code>.</li>
+      <li>Water density, viscosity and vapour pressure are interpolated from standard tables at the chosen temperature. Pipe roughness ε comes from the selected material.</li>
+      <li>Cavitation is flagged when the minimum absolute pressure along the pipe (usually the turbine outlet/draft tube or a shallow intake) falls to the water's vapour pressure; a low Thoma σ is also warned. Backflow / no-flow is flagged when the tailrace is at or above the headrace.</li>
+      <li>This is a steady-state teaching model — it does not resolve water-hammer transients, unsteady runner dynamics, or real turbine efficiency curves. Values are indicative.</li>
+    </ul>
+  </footer>
+</div>
+
+<script>
+"use strict";
+/* ================================================================== *
+ *  PHYSICS
+ * ================================================================== */
+const G = 9.81, PATM = 101325;
+const T_TAB=[0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100];
+const RHO=[999.84,999.96,999.70,999.10,998.21,997.05,995.65,994.03,992.22,990.21,988.04,985.69,983.20,980.55,977.76,974.84,971.79,968.61,965.31,961.89,958.35];
+const MU=[1.792,1.519,1.307,1.138,1.002,0.890,0.798,0.719,0.653,0.596,0.547,0.504,0.467,0.434,0.404,0.378,0.355,0.334,0.315,0.298,0.282].map(x=>x*1e-3);
+const PV=[611,872,1228,1706,2339,3169,4246,5627,7381,9590,12344,15752,19932,25022,31176,38563,47373,57815,70117,84529,101325];
+function interp(tab,T){T=Math.max(0,Math.min(100,T));const i=Math.min(T_TAB.length-2,Math.floor(T/5));
+  const w=(T-T_TAB[i])/(T_TAB[i+1]-T_TAB[i]);return tab[i]+w*(tab[i+1]-tab[i]);}
+function waterProps(T){const rho=interp(RHO,T),mu=interp(MU,T),pv=interp(PV,T);return{rho,mu,nu:mu/rho,pv};}
+function friction(Re,rr){if(Re<1)return 0;if(Re<2300)return 64/Re;
+  return 0.25/Math.pow(Math.log10(rr/3.7+5.74/Math.pow(Re,0.9)),2);}
+
+const MATERIALS={
+  pvc:{name:"PVC / plastic (smooth)",eps:0.0015},
+  copper:{name:"Drawn copper / brass",eps:0.0015},
+  steel:{name:"Commercial / welded steel",eps:0.045},
+  ductile:{name:"Coated ductile iron",eps:0.12},
+  galv:{name:"Galvanized iron",eps:0.15},
+  castiron:{name:"Cast iron",eps:0.26},
+  concrete:{name:"Concrete (smooth-finished)",eps:0.30},
+  concrete_r:{name:"Concrete (rough / unfinished)",eps:1.5},
+  wood:{name:"Wood stave",eps:0.5},
+  riveted:{name:"Riveted steel",eps:3.0},
+};
+
+function solve(p){
+  const wp=waterProps(p.T);
+  const A=Math.PI*p.D*p.D/4;
+  const At=Math.PI*p.dThroat*p.dThroat/4;
+  const Ct=p.Cd*At;
+  const rr=(p.eps/1000)/p.D;
+  const Ltot=p.L1+p.L2, a=p.alpha/100;
+  let Q=0,V=0,Re=0,f=0,Hnet=0,converged=false,regime="—";
+  const flowing=p.Hgross>0 && a>0 && Ct>0;
+  if(flowing){
+    f=0.02;
+    for(let k=0;k<100;k++){
+      const Rpipe=(f*Ltot/p.D+p.Kup+p.Kdown)/(2*G*A*A);
+      const Rturb=1/(2*G*Math.pow(Ct*a,2));
+      const Qn=Math.sqrt(p.Hgross/(Rpipe+Rturb));
+      const Vn=Qn/A, Ren=Vn*p.D/wp.nu, fn=friction(Ren,rr);
+      const done=Math.abs(fn-f)<1e-9;
+      Q=Qn;V=Vn;Re=Ren;f=fn;
+      if(done){converged=true;break;}
+    }
+    Hnet=(1/(2*G*Math.pow(Ct*a,2)))*Q*Q;
+    regime = Re<2300?"laminar":(Re<4000?"transitional":"turbulent");
+  }
+  const hv=V*V/(2*G);
+  const hf1=f*p.L1/p.D*hv, hf2=f*p.L2/p.D*hv, hUp=p.Kup*hv, hDn=p.Kdown*hv;
+  const hL=hf1+hf2+hUp+hDn;
+  const z1=p.Hgross, z2=0, zIn=z1-p.dInlet, zTurb=z2-p.dOutlet, zOut=z2-p.dOutlet;
+  // EGL stations
+  const eglRes1=z1, eglIn=z1-hUp, eglTin=eglIn-hf1, eglTout=eglTin-Hnet, eglOut=eglTout-hf2, eglRes2=eglOut-hDn;
+  const hglIn=eglIn-hv, hglTin=eglTin-hv, hglTout=eglTout-hv, hglOut=eglOut-hv;
+  // pipe stations for pressure scan
+  const stations=[
+    {key:"in",   name:"penstock intake", x:0,      z:zIn,   egl:eglIn,   hgl:hglIn },
+    {key:"tin",  name:"turbine inlet",   x:p.L1,   z:zTurb, egl:eglTin,  hgl:hglTin},
+    {key:"tout", name:"turbine outlet",  x:p.L1,   z:zTurb, egl:eglTout, hgl:hglTout},
+    {key:"out",  name:"draft outlet",    x:Ltot,   z:zOut,  egl:eglOut,  hgl:hglOut},
+  ];
+  stations.forEach(s=>{s.pHead=s.hgl-s.z; s.pG=wp.rho*G*s.pHead; s.pAbs=s.pG+PATM;});
+  const res1={name:"upper pool",x:0,z:zIn,egl:eglRes1,hgl:eglRes1};
+  const res2={name:"lower pool",x:Ltot,z:zOut,egl:eglRes2,hgl:eglRes2};
+  // minimum pressure
+  let minS=stations[0];
+  stations.forEach(s=>{if(s.pAbs<minS.pAbs)minS=s;});
+  const pin=stations[1], pout=stations[2];
+  const Phyd=wp.rho*G*Q*Hnet, Pshaft=p.eta*Phyd;
+  const dPturb=wp.rho*G*Hnet;
+  const marginVap=(pout.pAbs-wp.pv)/(wp.rho*G);           // m of head above vapour at outlet
+  const sigma=Hnet>0?((PATM-wp.pv)/(wp.rho*G)+p.dOutlet)/Hnet:NaN; // Thoma cavitation number
+  const NPSHa=(pout.pAbs-wp.pv)/(wp.rho*G)+hv;
+  return {p,wp,A,At,Ct,rr,Ltot,Q,V,Re,f,regime,Hnet,hv,hf1,hf2,hUp,hDn,hL,
+    z1,z2,zIn,zTurb,zOut,stations,res1,res2,minS,pin,pout,Phyd,Pshaft,dPturb,
+    marginVap,sigma,NPSHa,flowing,converged,
+    eglRes1,eglIn,eglTin,eglTout,eglOut,eglRes2,hglIn,hglTin,hglTout,hglOut};
+}
+
+/* ================================================================== *
+ *  CONTROLS
+ * ================================================================== */
+const DEFAULTS={Hgross:60,dInlet:4,dOutlet:3,L1:300,L2:15,D:1.5,
+  material:"steel",T:15,alpha:75,dThroat:0.6,eta:0.88,Kup:1.1,Kdown:1.0,Cd:0.9};
+const CONFIG=[
+ {group:"Reservoirs & penstock geometry",open:true,items:[
+   {id:"Hgross",label:"Gross head (surface-to-surface)",min:0,max:250,step:1,unit:"m"},
+   {id:"dInlet",label:"Intake depth below upper surface",min:0,max:30,step:0.5,unit:"m"},
+   {id:"dOutlet",label:"Outlet depth below tailwater (− = above)",min:-8,max:25,step:0.5,unit:"m"},
+   {id:"L1",label:"Penstock length (intake → turbine)",min:10,max:2000,step:5,unit:"m"},
+   {id:"L2",label:"Draft length (turbine → tailrace)",min:1,max:200,step:1,unit:"m"},
+   {id:"D",label:"Penstock inside diameter",min:0.3,max:6,step:0.05,unit:"m"},
+ ]},
+ {group:"Water & pipe",open:true,items:[
+   {id:"material",label:"Pipe material",type:"select"},
+   {id:"T",label:"Water temperature",min:0,max:95,step:1,unit:"°C"},
+ ]},
+ {group:"Turbine & wicket gate",open:true,items:[
+   {id:"alpha",label:"Wicket-gate opening",min:0,max:100,step:1,unit:"%"},
+   {id:"dThroat",label:"Turbine throat diameter (full gate)",min:0.1,max:4,step:0.05,unit:"m"},
+   {id:"eta",label:"Turbine efficiency η",min:0.5,max:0.95,step:0.01,unit:""},
+ ]},
+ {group:"Modelling assumptions",open:false,items:[
+   {id:"Kup",label:"Upstream minor-loss ΣK (entrance+bends)",min:0,max:6,step:0.1,unit:""},
+   {id:"Kdown",label:"Downstream minor-loss ΣK (exit+bends)",min:0,max:6,step:0.1,unit:""},
+   {id:"Cd",label:"Turbine discharge coefficient C_d",min:0.6,max:1,step:0.01,unit:""},
+ ]},
+];
+const state={...DEFAULTS};
+
+function fmtVal(id,v){
+  if(id==="eta"||id==="Cd") return v.toFixed(2);
+  if(id==="dInlet"||id==="dOutlet"||id==="D"||id==="dThroat"||id==="Kup"||id==="Kdown") return v.toFixed(2).replace(/\.00$/,"");
+  return String(v);
+}
+function buildControls(){
+  const root=document.getElementById("controls");
+  CONFIG.forEach(g=>{
+    const d=document.createElement("details");
+    d.className="cgroup"; if(g.open)d.open=true;
+    const s=document.createElement("summary"); s.textContent=g.group; d.appendChild(s);
+    const body=document.createElement("div"); body.className="cbody"; d.appendChild(body);
+    g.items.forEach(it=>{
+      const c=document.createElement("div"); c.className="ctrl";
+      if(it.type==="select"){
+        const lab=document.createElement("div"); lab.className="lab";
+        lab.innerHTML=`<label for="c-${it.id}">${it.label}</label>`;
+        const sel=document.createElement("select"); sel.id="c-"+it.id;
+        for(const k in MATERIALS){const o=document.createElement("option");o.value=k;
+          o.textContent=`${MATERIALS[k].name}  (ε=${MATERIALS[k].eps} mm)`;if(k===state[it.id])o.selected=true;sel.appendChild(o);}
+        sel.addEventListener("input",()=>{state[it.id]=sel.value;update();});
+        c.appendChild(lab); c.appendChild(sel);
+      }else{
+        const lab=document.createElement("div"); lab.className="lab";
+        const vspan=`<span class="v" id="v-${it.id}">${fmtVal(it.id,state[it.id])}<span class="u">${it.unit}</span></span>`;
+        lab.innerHTML=`<label for="c-${it.id}">${it.label}</label>${vspan}`;
+        const r=document.createElement("input"); r.type="range"; r.id="c-"+it.id;
+        r.min=it.min; r.max=it.max; r.step=it.step; r.value=state[it.id];
+        r.addEventListener("input",()=>{state[it.id]=parseFloat(r.value);
+          document.getElementById("v-"+it.id).innerHTML=fmtVal(it.id,state[it.id])+`<span class="u">${it.unit}</span>`;update();});
+        c.appendChild(lab); c.appendChild(r);
+      }
+      body.appendChild(c);
+    });
+    root.appendChild(d);
+  });
+}
+function readParams(){return {...state,eps:MATERIALS[state.material].eps};}
+
+/* ================================================================== *
+ *  NUMBER FORMAT
+ * ================================================================== */
+const nf=(x,d=1)=>Number.isFinite(x)?x.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d}):"—";
+const kPa=pa=>nf(pa/1000,0);
+
+/* ================================================================== *
+ *  SCENE
+ * ================================================================== */
+function renderScene(r){
+  const W=1080,H=600,topPad=54,botPad=86;
+  const zHi=Math.max(r.z1,r.zTurb,r.zIn,2);
+  const zLo=Math.min(r.z2,r.zTurb,r.zOut)-Math.max((zHi)*0.04,1);
+  const span=Math.max(zHi-zLo,8);
+  const y=z=>topPad+(zHi-z)/span*(H-topPad-botPad);
+  // x anchors
+  const resR=300, inX=resR, turbInX=612, turbCX=650, turbOutX=690, outX=800, resL2=W-40;
+  const yIn=y(r.zIn), yTurb=y(r.zTurb), yOut=y(r.zOut), yS1=y(r.z1), yS2=y(r.z2);
+  const pipeW=Math.max(12,Math.min(46,6+r.p.D*6));
+  const flowing=r.flowing && r.Q>1e-4;
+  const dur=flowing?Math.max(.35,Math.min(9,3.2/Math.max(r.V,.05))).toFixed(2):"0";
+
+  const bottomUp=Math.min(yIn+90,H-botPad);
+  const bottomLo=Math.min(Math.max(yOut,yS2)+90,H-botPad+4);
+
+  let svg="";
+  // ground beneath the penstock
+  svg+=`<path class="s-earth" d="M ${resR} ${yIn} L ${resR} ${H} L ${W} ${H} L ${W} ${yS2}
+        L ${outX} ${yOut} L ${turbOutX} ${yTurb} L ${turbInX} ${yTurb} Z"/>`;
+  // upper reservoir water + surface
+  svg+=`<rect class="s-water" x="40" y="${yS1}" width="${resR-40}" height="${bottomUp-yS1}" rx="3"/>`;
+  svg+=`<line class="s-water-line" x1="40" y1="${yS1}" x2="${resR}" y2="${yS1}"/>`;
+  // lower reservoir water + surface
+  svg+=`<rect class="s-water" x="${outX-8}" y="${yS2}" width="${resL2-(outX-8)+40}" height="${bottomLo-yS2}" rx="3"/>`;
+  svg+=`<line class="s-water-line" x1="${outX-8}" y1="${yS2}" x2="${W-20}" y2="${yS2}"/>`;
+  // datum
+  svg+=`<line class="s-datum" x1="40" y1="${yS2}" x2="${W-20}" y2="${yS2}"/>`;
+  svg+=`<text class="s-lbl-sm" x="46" y="${yS2-6}">tailwater datum  z = 0</text>`;
+
+  // penstock (outer steel + inner)
+  const pathUp=`M ${inX} ${yIn} L ${turbInX} ${yTurb}`;
+  const pathDn=`M ${turbOutX} ${yTurb} L ${outX} ${yOut}`;
+  svg+=`<path class="s-pipe" style="stroke-width:${pipeW}" d="${pathUp}"/>`;
+  svg+=`<path class="s-pipe" style="stroke-width:${pipeW}" d="${pathDn}"/>`;
+  svg+=`<path class="s-pipe-in" style="stroke-width:${Math.max(6,pipeW-6)}" d="${pathUp}"/>`;
+  svg+=`<path class="s-pipe-in" style="stroke-width:${Math.max(6,pipeW-6)}" d="${pathDn}"/>`;
+  // animated flow line
+  const flowCls=flowing?"s-flow run":"s-flow";
+  svg+=`<path class="${flowCls}" style="stroke-width:${Math.max(3,pipeW-12)};animation-duration:${dur}s" d="${pathUp}"/>`;
+  svg+=`<path class="${flowCls}" style="stroke-width:${Math.max(3,pipeW-12)};animation-duration:${dur}s" d="${pathDn}"/>`;
+  // flow arrows along upstream pipe
+  if(flowing){
+    const ax=[0.42,0.72], v=[turbInX-inX,yTurb-yIn], len=Math.hypot(v[0],v[1]);
+    const nx=v[0]/len, ny=v[1]/len;
+    ax.forEach(t=>{const px=inX+v[0]*t, py=yIn+v[1]*t, s=7;
+      svg+=`<path class="s-arrow" d="M ${px+nx*s} ${py+ny*s} L ${px-nx*s+ny*s} ${py-ny*s-nx*s} L ${px-nx*s-ny*s} ${py-ny*s+nx*s} Z"/>`;});
+    svg+=`<path class="s-arrow" d="M ${(turbOutX+outX)/2+7} ${yTurb} L ${(turbOutX+outX)/2-4} ${yTurb-6} L ${(turbOutX+outX)/2-4} ${yTurb+6} Z"/>`;
+  }
+
+  // turbine housing + runner + generator
+  const th=pipeW+30;
+  svg+=`<rect class="s-turb-body" x="${turbInX}" y="${yTurb-th/2}" width="${turbOutX-turbInX}" height="${th}" rx="7"/>`;
+  // shaft + generator
+  svg+=`<line x1="${turbCX}" y1="${yTurb-th/2}" x2="${turbCX}" y2="${yTurb-th/2-34}" stroke="var(--steel)" stroke-width="4"/>`;
+  svg+=`<rect class="s-turb-body" x="${turbCX-26}" y="${yTurb-th/2-64}" width="52" height="30" rx="5"/>`;
+  svg+=`<text class="s-val" x="${turbCX}" y="${yTurb-th/2-44}" text-anchor="middle">G</text>`;
+  // runner
+  const rr0=Math.min(15,th/2-6), spin=flowing?"s-runner spin":"s-runner";
+  svg+=`<circle class="s-runner-c" cx="${turbCX}" cy="${yTurb}" r="${rr0+3}"/>`;
+  svg+=`<g class="${spin}" style="animation-duration:${flowing?Math.max(.6,dur/2).toFixed(2):0}s;transform-box:fill-box" transform="translate(0,0)">`;
+  for(let i=0;i<6;i++){const ang=i*Math.PI/3;
+    svg+=`<line class="s-runner" x1="${turbCX}" y1="${yTurb}" x2="${(turbCX+Math.cos(ang)*rr0).toFixed(1)}" y2="${(yTurb+Math.sin(ang)*rr0).toFixed(1)}"/>`;}
+  svg+=`</g>`;
+  // gate meter
+  const gw=54,gx=turbCX-gw/2,gy=yTurb+th/2+8;
+  svg+=`<rect class="s-gate-bg" x="${gx}" y="${gy}" width="${gw}" height="9" rx="4"/>`;
+  svg+=`<rect class="s-gate-fill" x="${gx+1}" y="${gy+1}" width="${(gw-2)*r.p.alpha/100}" height="7" rx="3"/>`;
+  svg+=`<text class="s-lbl-sm" x="${turbCX}" y="${gy+24}" text-anchor="middle">wicket gate ${r.p.alpha.toFixed(0)}%</text>`;
+
+  // dimension lines: Hgross (far left)
+  svg+=dimV(22,yS1,yS2,`H_gross = ${nf(r.p.Hgross,0)} m`,true);
+  // dInlet just left of dam face
+  if(r.p.dInlet>0.01) svg+=dimV(resR-14,yS1,yIn,`d_in = ${nf(r.p.dInlet,1)} m`,false);
+  // dOutlet near outlet
+  svg+=dimV(outX+22,yS2,yOut,(r.p.dOutlet>=0?`d_out = ${nf(r.p.dOutlet,1)} m`:`${nf(-r.p.dOutlet,1)} m above TW`),false);
+
+  // pressure callouts at turbine inlet / outlet
+  svg+=callout(turbInX-120,yTurb-20,"TURBINE IN",`${nf(r.pin.pG/1000,0)} kPa`,`${nf(r.pin.pAbs/1000,0)} kPa abs`);
+  svg+=callout(outX+2,yTurb-70,"TURBINE OUT",`${nf(r.pout.pG/1000,0)} kPa`,`${nf(r.pout.pAbs/1000,0)} kPa abs`);
+
+  // cavitation glow at min station
+  if(r.flowing && r.minS.pAbs<=r.wp.pv+15000){
+    const gxp = r.minS.key==="in"?inX : (r.minS.key==="out"?outX : turbOutX);
+    const gyp = r.minS.key==="in"?yIn : yTurb;
+    const col = r.minS.pAbs<=r.wp.pv?"cav-glow":"cav-glow";
+    svg+=`<circle class="${col}" cx="${gxp}" cy="${gyp}" r="26"/>`;
+  }
+  // reservoir labels
+  svg+=`<text class="s-lbl" x="60" y="${yS1-10}">Headrace (upper reservoir)</text>`;
+  svg+=`<text class="s-lbl" x="${W-24}" y="${bottomLo-10}" text-anchor="end">Tailrace (lower reservoir)</text>`;
+
+  document.getElementById("scene").innerHTML=svg;
+}
+function dimV(x,y1,y2,label,left){
+  const ya=Math.min(y1,y2),yb=Math.max(y1,y2),m=(y1+y2)/2;
+  let s=`<line class="s-dim" x1="${x}" y1="${ya}" x2="${x}" y2="${yb}"/>`;
+  s+=`<path class="s-dim" d="M ${x-4} ${ya+7} L ${x} ${ya} L ${x+4} ${ya+7}"/>`;
+  s+=`<path class="s-dim" d="M ${x-4} ${yb-7} L ${x} ${yb} L ${x+4} ${yb-7}"/>`;
+  s+=`<line class="s-dim-tick" x1="${x-5}" y1="${ya}" x2="${x+5}" y2="${ya}"/>`;
+  s+=`<line class="s-dim-tick" x1="${x-5}" y1="${yb}" x2="${x+5}" y2="${yb}"/>`;
+  const tx=left?x+9:x+9;
+  s+=`<text class="s-val" x="${tx}" y="${m}" transform="rotate(-90 ${tx} ${m})" text-anchor="middle">${label}</text>`;
+  return s;
+}
+function callout(x,y,k,v,sub){
+  const w=104,h=34;
+  let s=`<rect class="s-callout" x="${x}" y="${y}" width="${w}" height="${h}" rx="6"/>`;
+  s+=`<text class="s-callout-k" x="${x+8}" y="${y+12}">${k}</text>`;
+  s+=`<text class="s-callout-t" x="${x+8}" y="${y+24}">${v}</text>`;
+  s+=`<text class="s-callout-k" x="${x+52}" y="${y+24}">${sub}</text>`;
+  return s;
+}
+
+/* ================================================================== *
+ *  READOUTS + WARNINGS
+ * ================================================================== */
+function statusOf(r,warns){
+  if(!r.flowing) return {cls:"crit",txt:r.p.Hgross<=0?"No flow — no head":"No flow — gate shut"};
+  if(warns.some(w=>w.sev==="crit")) return {cls:"crit",txt:"Cavitation risk"};
+  if(warns.some(w=>w.sev==="warn")) return {cls:"warn",txt:"Caution"};
+  return {cls:"ok",txt:"Generating"};
+}
+function renderKPIs(r,st){
+  const el=document.getElementById("kpis");
+  el.innerHTML=`
+   <div class="kpi accent"><div class="k">Shaft power</div>
+     <div class="big">${nf(r.Pshaft/1e6,2)}<span class="u">MW</span></div></div>
+   <div class="kpi"><div class="k">Flow rate Q</div>
+     <div class="big">${nf(r.Q,2)}<span class="u">m³/s</span></div></div>
+   <div class="kpi"><div class="k">Net head on turbine</div>
+     <div class="big">${nf(r.Hnet,1)}<span class="u">m</span></div></div>
+   <div class="kpi"><div class="k">Status</div>
+     <div class="status-pill ${st.cls}"><span class="dot"></span>${st.txt}</div></div>`;
+}
+function renderWarnings(r){
+  const warns=[];
+  if(r.p.Hgross<=0){
+    warns.push({sev:"crit",t:"No usable head — flow cannot occur",
+      m:"The tailrace is at or above the headrace, so gravity cannot drive water through the turbine. Moving water this way would require a pump supplying positive head (turbine head becomes negative)."});
+  } else if(r.p.alpha<=0){
+    warns.push({sev:"warn",t:"Wicket gate closed",m:"Gate opening is 0% — the flow path is shut and the unit produces no power."});
+  }
+  if(r.flowing){
+    if(r.minS.pAbs<=r.wp.pv){
+      warns.push({sev:"crit",t:`Cavitation likely at the ${r.minS.name}`,
+        m:`Absolute pressure there (${nf(r.minS.pAbs/1000,1)} kPa) has fallen to the water's vapour pressure (${nf(r.wp.pv/1000,1)} kPa at ${r.p.T}°C). Vapour bubbles will form and collapse — expect erosion, noise and lost efficiency. Increase outlet submergence, lower the water temperature, reduce velocity (larger pipe / smaller gate) or set the turbine deeper.`});
+    } else if(r.minS.pAbs<=r.wp.pv+15000){
+      warns.push({sev:"warn",t:`Low pressure margin at the ${r.minS.name}`,
+        m:`Minimum absolute pressure is ${nf(r.minS.pAbs/1000,1)} kPa — only ${nf((r.minS.pAbs-r.wp.pv)/1000,1)} kPa above vapour pressure. Cavitation is not predicted yet but the margin is thin.`});
+    }
+    if(Number.isFinite(r.sigma) && r.sigma<0.10){
+      warns.push({sev:"warn",t:`Low Thoma cavitation number (σ = ${nf(r.sigma,2)})`,
+        m:"Draft-tube / runner-exit cavitation becomes likely as σ drops below ~0.1. More outlet submergence raises σ."});
+    }
+    if(r.V>7){
+      warns.push({sev:"warn",t:`High penstock velocity (${nf(r.V,1)} m/s)`,
+        m:"Above ~7 m/s, wall erosion and water-hammer over-pressures on sudden gate closure become concerns. Consider a larger diameter."});
+    }
+    if(r.regime==="transitional"){
+      warns.push({sev:"info",t:`Transitional flow (Re = ${nf(r.Re,0)})`,
+        m:"Reynolds number is between 2300 and 4000; the friction factor is inherently uncertain in this band."});
+    } else if(r.regime==="laminar"){
+      warns.push({sev:"info",t:`Laminar flow (Re = ${nf(r.Re,0)})`,
+        m:"Very low velocity — friction follows f = 64/Re. Unusual for a penstock; check the gate/geometry."});
+    }
+  }
+  if(!warns.some(w=>w.sev==="crit"||w.sev==="warn") && r.flowing){
+    warns.unshift({sev:"ok",t:"Operating normally",
+      m:`No cavitation or backflow predicted. Minimum pressure ${nf(r.minS.pAbs/1000,0)} kPa abs at the ${r.minS.name}, ${nf(r.marginVap,1)} m of head above vapour.`});
+  }
+  const ic={ok:"✓",warn:"!",crit:"✕",info:"i"};
+  document.getElementById("warnbox").innerHTML=warns.map(w=>
+    `<div class="warn-item ${w.sev}"><div class="ic">${ic[w.sev]}</div>
+      <div><div class="t">${w.t}</div><div class="m">${w.m}</div></div></div>`).join("");
+  return warns;
+}
+function tile(k,val,unit,sub,cls=""){
+  return `<div class="tile ${cls}"><div class="k">${k}</div>
+    <div class="val">${val}<span class="u">${unit||""}</span></div>${sub?`<div class="sub">${sub}</div>`:""}</div>`;
+}
+function renderTiles(r){
+  const cavCls=r.flowing&&r.pout.pAbs<=r.wp.pv?"hot":(r.flowing&&r.pout.pAbs<=r.wp.pv+15000?"warmv":"");
+  const t=[
+    tile("Velocity in penstock",nf(r.V,2),"m/s"),
+    tile("Reynolds number",r.Re>=1e4?nf(r.Re/1e6,2)+"×10⁶":nf(r.Re,0),"",r.regime),
+    tile("Friction factor f",nf(r.f,4),"","Darcy–Weisbach"),
+    tile("Head loss (total)",nf(r.hL,2),"m",`friction ${nf(r.hf1+r.hf2,2)} + minor ${nf(r.hUp+r.hDn,2)} m`),
+    tile("Turbine INLET pressure",nf(r.pin.pG/1000,0),"kPa",`${nf(r.pin.pAbs/1000,0)} kPa abs · ${nf(r.pin.pHead,1)} m`),
+    tile("Turbine OUTLET pressure",nf(r.pout.pG/1000,0),"kPa",`${nf(r.pout.pAbs/1000,0)} kPa abs · ${nf(r.pout.pHead,1)} m`,cavCls),
+    tile("Pressure drop across turbine",nf(r.dPturb/1000,0),"kPa",`= net head ${nf(r.Hnet,1)} m`),
+    tile("Hydraulic power ρgQH",nf(r.Phyd/1e6,2),"MW",`shaft ${nf(r.Pshaft/1e6,2)} MW at η=${r.p.eta}`),
+    tile("Margin above vapour (outlet)",nf(r.marginVap,1),"m",`${nf((r.pout.pAbs-r.wp.pv)/1000,0)} kPa · NPSH_a ${nf(r.NPSHa,1)} m`,cavCls),
+    tile("Thoma number σ",Number.isFinite(r.sigma)?nf(r.sigma,2):"—","",r.flowing?"crit ≈ 0.1":""),
+    tile("Water density ρ",nf(r.wp.rho,1),"kg/m³",`at ${r.p.T} °C`),
+    tile("Kinematic viscosity ν",nf(r.wp.nu*1e6,3),"mm²/s",`μ ${nf(r.wp.mu*1e3,3)} mPa·s`),
+    tile("Vapour pressure p_v",nf(r.wp.pv/1000,2),"kPa",`at ${r.p.T} °C`),
+    tile("Pipe roughness ε",nf(r.p.eps,3),"mm",`ε/D ${nf(r.rr,5)}`),
+  ];
+  document.getElementById("tiles").innerHTML=t.join("");
+}
+
+/* ================================================================== *
+ *  CHARTS
+ * ================================================================== */
+function cssv(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+function niceTicks(lo,hi,n){
+  const span=hi-lo||1, raw=span/n, mag=Math.pow(10,Math.floor(Math.log10(raw)));
+  const norm=raw/mag, step=(norm<1.5?1:norm<3?2:norm<7?5:10)*mag;
+  const t=[]; for(let v=Math.ceil(lo/step)*step; v<=hi+1e-9; v+=step) t.push(+v.toFixed(6));
+  return t;
+}
+let profileData=null;
+function drawProfile(r){
+  const W=640,H=320,mL=52,mR=70,mT=16,mB=44;
+  const iw=W-mL-mR, ih=H-mT-mB;
+  const eps=Math.max(r.Ltot*0.012,3);
+  // station list with render-x (small offsets for coincident points)
+  const pts=[
+    {x:0,           z:r.zIn,  egl:r.eglIn,  hgl:r.hglIn },
+    {x:r.p.L1-eps,  z:r.zTurb,egl:r.eglTin, hgl:r.hglTin},
+    {x:r.p.L1+eps,  z:r.zTurb,egl:r.eglTout,hgl:r.hglTout},
+    {x:r.Ltot,      z:r.zOut, egl:r.eglOut, hgl:r.hglOut},
+  ];
+  const xs=[0,r.Ltot];
+  const allY=[r.z1,r.z2,r.eglRes1,r.eglRes2,...pts.flatMap(p=>[p.z,p.egl,p.hgl])];
+  let yLo=Math.min(...allY), yHi=Math.max(...allY);
+  const pad=(yHi-yLo)*0.08||1; yLo-=pad; yHi+=pad;
+  const X=v=>mL+(v-xs[0])/((xs[1]-xs[0])||1)*iw;
+  const Y=v=>mT+(yHi-v)/((yHi-yLo)||1)*ih;
+  let s="";
+  // grid + y ticks
+  niceTicks(yLo,yHi,5).forEach(v=>{const yy=Y(v);
+    s+=`<line class="c-grid" x1="${mL}" y1="${yy}" x2="${W-mR}" y2="${yy}"/>`;
+    s+=`<text class="c-tick" x="${mL-7}" y="${yy+3}" text-anchor="end">${v}</text>`;});
+  // x ticks
+  niceTicks(0,r.Ltot,5).forEach(v=>{const xx=X(v);
+    s+=`<text class="c-tick" x="${xx}" y="${H-mB+16}" text-anchor="middle">${v}</text>`;});
+  s+=`<text class="c-atitle" x="${mL+iw/2}" y="${H-4}" text-anchor="middle">distance along flow path (m)</text>`;
+  s+=`<text class="c-atitle" transform="rotate(-90 12 ${mT+ih/2})" x="12" y="${mT+ih/2}" text-anchor="middle">elevation head (m)</text>`;
+  // datum
+  s+=`<line class="c-datum" x1="${mL}" y1="${Y(0)}" x2="${W-mR}" y2="${Y(0)}"/>`;
+  // pressure fill quads between HGL and pipe
+  for(let i=0;i<pts.length-1;i++){
+    const a=pts[i],b=pts[i+1];
+    const neg=(a.hgl-a.z<0)||(b.hgl-b.z<0);
+    s+=`<path class="${neg?"c-fill-neg":"c-fill-pos"}" d="M ${X(a.x)} ${Y(a.hgl)} L ${X(b.x)} ${Y(b.hgl)} L ${X(b.x)} ${Y(b.z)} L ${X(a.x)} ${Y(a.z)} Z"/>`;
+  }
+  // reservoir pools
+  s+=`<rect class="c-pool" x="${mL}" y="${Y(r.z1)}" width="26" height="${Math.max(2,Y(r.zIn)-Y(r.z1))}"/>`;
+  s+=`<rect class="c-pool" x="${W-mR-26}" y="${Y(r.z2)}" width="26" height="${Math.max(2,Y(r.zOut)-Y(r.z2))}"/>`;
+  // pipe centerline
+  s+=`<polyline class="c-pipe" points="${pts.map(p=>`${X(p.x)},${Y(p.z)}`).join(" ")}"/>`;
+  // EGL from res1 → stations → res2
+  const eglPath=[[X(0),Y(r.z1)],...pts.map(p=>[X(p.x),Y(p.egl)]),[X(r.Ltot),Y(r.eglRes2)]];
+  const hglPath=[[X(0),Y(r.z1)],...pts.map(p=>[X(p.x),Y(p.hgl)]),[X(r.Ltot),Y(r.eglRes2)]];
+  s+=`<polyline class="c-hgl" points="${hglPath.map(p=>p.join(",")).join(" ")}"/>`;
+  s+=`<polyline class="c-egl" points="${eglPath.map(p=>p.join(",")).join(" ")}"/>`;
+  // direct labels
+  s+=`<text class="c-dlabel" x="${W-mR+6}" y="${Y(r.eglOut)+3}" fill="${cssv("--egl")}">EGL</text>`;
+  s+=`<text class="c-dlabel" x="${W-mR+6}" y="${Y(r.hglOut)+14}" fill="${cssv("--hgl")}">HGL</text>`;
+  // "pipe" label placed mid-descent to avoid the crowded intake corner
+  const pmX=X(r.p.L1*0.42), pmZ=r.zIn+(r.zTurb-r.zIn)*0.42;
+  s+=`<text class="c-dlabel" x="${pmX}" y="${Y(pmZ)-6}" text-anchor="middle" fill="${cssv("--pipeln")}">pipe</text>`;
+  // min pressure marker
+  if(r.flowing){
+    const m=r.minS, mx=X(m.x===r.p.L1?r.p.L1+eps:m.x), my=Y(m.hgl);
+    const col=m.pAbs<=r.wp.pv?cssv("--crit"):(m.pAbs<=r.wp.pv+15000?cssv("--warn"):cssv("--ink-2"));
+    const nearL=mx<mL+70;
+    s+=`<circle cx="${mx}" cy="${my}" r="4.5" fill="${col}" stroke="${cssv("--surface")}" stroke-width="1.5"/>`;
+    s+=`<text class="c-tick" x="${nearL?mx+8:mx}" y="${nearL?my+16:my-8}" text-anchor="${nearL?"start":"middle"}" fill="${col}">min p ${nf(m.pHead,1)} m</text>`;
+  }
+  // hover overlay
+  s+=`<rect id="profHit" x="${mL}" y="${mT}" width="${iw}" height="${ih}" fill="transparent" style="cursor:crosshair"/>`;
+  document.getElementById("profile").innerHTML=s;
+  profileData={pts,X,Y,mL,mR,mT,ih,iw,r};
+  attachProfileHover();
+}
+function attachProfileHover(){
+  const svg=document.getElementById("profile"), hit=document.getElementById("profHit"), tip=document.getElementById("tipProfile");
+  if(!hit)return;
+  const {pts,X,Y,r,mT,ih}=profileData;
+  hit.onmousemove=(e)=>{
+    const pt=svgCoords(svg,e);
+    // nearest station by x
+    let best=pts[0],bd=1e9;
+    pts.forEach(p=>{const d=Math.abs(X(p.x)-pt.x);if(d<bd){bd=d;best=p;}});
+    const px=X(best.x);
+    tip.style.opacity=1;
+    const rect=svg.getBoundingClientRect(), sc=rect.width/640;
+    tip.style.left=Math.min(px*sc+14,rect.width-140)+"px";
+    tip.style.top=(mT*sc+8)+"px";
+    const pAbs=PATM+r.wp.rho*G*(best.hgl-best.z);
+    tip.innerHTML=`<div class="th">${nf(best.x,0)} m along path</div>
+      <div class="tr"><span class="lg"><i class="dotc" style="background:${cssv('--egl')}"></i>EGL</span><span class="vv">${nf(best.egl,1)} m</span></div>
+      <div class="tr"><span class="lg"><i class="dotc" style="background:${cssv('--hgl')}"></i>HGL</span><span class="vv">${nf(best.hgl,1)} m</span></div>
+      <div class="tr"><span class="lg">pressure</span><span class="vv">${nf((best.hgl-best.z),1)} m</span></div>
+      <div class="tr"><span class="lg">p abs</span><span class="vv">${nf(pAbs/1000,0)} kPa</span></div>`;
+  };
+  hit.onmouseleave=()=>{tip.style.opacity=0;};
+}
+let powerData=null;
+function drawPower(r,params){
+  const W=640,H=320,mL=52,mR=24,mT=16,mB=44;
+  const iw=W-mL-mR, ih=H-mT-mB;
+  const samples=[];
+  for(let a=0;a<=100;a+=2){samples.push({a,P:solve({...params,alpha:a}).Pshaft/1e6});}
+  const maxP=Math.max(...samples.map(s=>s.P),0.001);
+  let iMax=0; samples.forEach((s,i)=>{if(s.P>samples[iMax].P)iMax=i;});
+  const X=a=>mL+a/100*iw, Y=P=>mT+(1-P/(maxP*1.12))*ih;
+  let s="";
+  niceTicks(0,maxP*1.12,5).forEach(v=>{const yy=Y(v);
+    s+=`<line class="c-grid" x1="${mL}" y1="${yy}" x2="${W-mR}" y2="${yy}"/>`;
+    s+=`<text class="c-tick" x="${mL-7}" y="${yy+3}" text-anchor="end">${nf(v,v<10?1:0)}</text>`;});
+  [0,20,40,60,80,100].forEach(v=>{s+=`<text class="c-tick" x="${X(v)}" y="${H-mB+16}" text-anchor="middle">${v}</text>`;});
+  s+=`<text class="c-atitle" x="${mL+iw/2}" y="${H-4}" text-anchor="middle">wicket-gate opening (%)</text>`;
+  s+=`<text class="c-atitle" transform="rotate(-90 12 ${mT+ih/2})" x="12" y="${mT+ih/2}" text-anchor="middle">shaft power (MW)</text>`;
+  const line=samples.map(s2=>`${X(s2.a)},${Y(s2.P)}`).join(" ");
+  s+=`<polygon class="c-area" points="${mL},${Y(0)} ${line} ${W-mR},${Y(0)}"/>`;
+  s+=`<polyline class="c-line" points="${line}"/>`;
+  // max power marker
+  s+=`<circle class="c-max" cx="${X(samples[iMax].a)}" cy="${Y(samples[iMax].P)}" r="5"/>`;
+  const mlx=Math.max(mL+52,Math.min(W-mR-52,X(samples[iMax].a)));
+  s+=`<text class="c-tick" x="${mlx}" y="${Y(samples[iMax].P)-10}" text-anchor="middle" fill="${cssv('--turbine')}">max ${nf(samples[iMax].P,2)} MW @ ${samples[iMax].a}%</text>`;
+  // operating point
+  const opP=r.Pshaft/1e6;
+  s+=`<line class="c-crosshair" x1="${X(params.alpha)}" y1="${mT}" x2="${X(params.alpha)}" y2="${mT+ih}"/>`;
+  s+=`<circle class="c-op" cx="${X(params.alpha)}" cy="${Y(opP)}" r="6"/>`;
+  s+=`<rect id="powHit" x="${mL}" y="${mT}" width="${iw}" height="${ih}" fill="transparent" style="cursor:crosshair"/>`;
+  document.getElementById("power").innerHTML=s;
+  powerData={samples,X,Y,mL,mT,ih,iw,maxP};
+  attachPowerHover();
+}
+function attachPowerHover(){
+  const svg=document.getElementById("power"), hit=document.getElementById("powHit"), tip=document.getElementById("tipPower");
+  if(!hit)return;
+  const {samples,X,Y,mT}=powerData;
+  hit.onmousemove=(e)=>{
+    const pt=svgCoords(svg,e);
+    const a=Math.max(0,Math.min(100,(pt.x-X(0))/(X(100)-X(0))*100));
+    let best=samples[0],bd=1e9; samples.forEach(sm=>{const d=Math.abs(sm.a-a);if(d<bd){bd=d;best=sm;}});
+    const rect=svg.getBoundingClientRect(), sc=rect.width/640;
+    tip.style.opacity=1;
+    tip.style.left=Math.min(X(best.a)*sc+12,rect.width-120)+"px";
+    tip.style.top=(mT*sc+6)+"px";
+    tip.innerHTML=`<div class="th">gate ${best.a}%</div>
+      <div class="tr"><span class="lg"><i class="dotc" style="background:${cssv('--accent')}"></i>shaft P</span><span class="vv">${nf(best.P,2)} MW</span></div>`;
+  };
+  hit.onmouseleave=()=>{tip.style.opacity=0;};
+}
+function svgCoords(svg,e){
+  const r=svg.getBoundingClientRect();
+  return {x:(e.clientX-r.left)/r.width*640, y:(e.clientY-r.top)/r.height*320};
+}
+
+/* ================================================================== *
+ *  ORCHESTRATION
+ * ================================================================== */
+function update(){
+  const params=readParams();
+  const r=solve(params);
+  const warns=renderWarnings(r);
+  const st=statusOf(r,warns);
+  renderKPIs(r,st);
+  renderTiles(r);
+  renderScene(r);
+  drawProfile(r);
+  drawPower(r,params);
+}
+document.getElementById("resetBtn").addEventListener("click",()=>{
+  Object.assign(state,DEFAULTS);
+  document.getElementById("controls").innerHTML="";
+  buildControls(); update();
+});
+const themeBtn=document.getElementById("themeBtn");
+themeBtn.addEventListener("click",()=>{
+  const cur=document.documentElement.getAttribute("data-theme");
+  const sysDark=window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const now=cur?cur:(sysDark?"dark":"light");
+  document.documentElement.setAttribute("data-theme", now==="dark"?"light":"dark");
+  update(); // recolor chart inline fills
+});
+buildControls();
+update();
+</script>
+</body>
+</html>
