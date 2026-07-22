@@ -403,13 +403,13 @@ function solve(p){
 /* ================================================================== *
  *  CONTROLS
  * ================================================================== */
-const DEFAULTS={Hgross:60,dInlet:4,dOutlet:3,L1:300,L2:15,D:1.5,
+const DEFAULTS={Hgross:60,dInlet:4,Htu:63,L1:300,L2:15,D:1.5,
   material:"steel",T:15,alpha:75,dThroat:0.6,eta:0.88,Kup:1.1,Kdown:1.0,Cd:0.9};
 const CONFIG=[
  {group:"Reservoirs & penstock geometry",open:true,items:[
    {id:"Hgross",label:"Gross head (surface-to-surface)",min:0,max:250,step:1,unit:"m"},
    {id:"dInlet",label:"Intake depth below upper surface",min:0,max:30,step:0.5,unit:"m"},
-   {id:"dOutlet",label:"Outlet depth below tailwater (− = above)",min:-8,max:25,step:0.5,unit:"m"},
+   {id:"Htu",label:"Turbine centre below upper surface",min:2,max:260,step:0.5,unit:"m"},
    {id:"L1",label:"Penstock length (intake → turbine)",min:10,max:2000,step:5,unit:"m"},
    {id:"L2",label:"Draft length (turbine → tailrace)",min:1,max:200,step:1,unit:"m"},
    {id:"D",label:"Penstock inside diameter",min:0.3,max:6,step:0.05,unit:"m"},
@@ -433,7 +433,7 @@ const state={...DEFAULTS};
 
 function fmtVal(id,v){
   if(id==="eta"||id==="Cd") return v.toFixed(2);
-  if(id==="dInlet"||id==="dOutlet"||id==="D"||id==="dThroat"||id==="Kup"||id==="Kdown") return v.toFixed(2).replace(/\.00$/,"");
+  if(id==="dInlet"||id==="Htu"||id==="D"||id==="dThroat"||id==="Kup"||id==="Kdown") return v.toFixed(2).replace(/\.00$/,"");
   return String(v);
 }
 function buildControls(){
@@ -468,7 +468,13 @@ function buildControls(){
     root.appendChild(d);
   });
 }
-function readParams(){return {...state,eps:MATERIALS[state.material].eps};}
+function readParams(){
+  // Turbine centre is set relative to the UPPER surface (Htu, a drop from z1),
+  // so its submergence below the tailwater is derived and gross head is untouched:
+  //   zTurb = z1 - Htu = Hgross - Htu ;  dOutlet = z2 - zTurb = Htu - Hgross
+  const dOutlet=state.Htu-state.Hgross;
+  return {...state,dOutlet,eps:MATERIALS[state.material].eps};
+}
 
 /* ================================================================== *
  *  NUMBER FORMAT
@@ -553,8 +559,10 @@ function renderScene(r){
   svg+=dimV(22,yS1,yS2,`H_gross = ${nf(r.p.Hgross,0)} m`,true);
   // dInlet just left of dam face
   if(r.p.dInlet>0.01) svg+=dimV(resR-14,yS1,yIn,`d_in = ${nf(r.p.dInlet,1)} m`,false);
-  // dOutlet near outlet
-  svg+=dimV(outX+22,yS2,yOut,(r.p.dOutlet>=0?`d_out = ${nf(r.p.dOutlet,1)} m`:`${nf(-r.p.dOutlet,1)} m above TW`),false);
+  // Htu: upper surface -> turbine centre (the user control), just left of the turbine
+  svg+=dimV(turbInX-22,yS1,yTurb,`upper→turbine = ${nf(r.p.Htu,1)} m`,false);
+  // derived outlet submergence near the outlet
+  svg+=dimV(outX+22,yS2,yOut,(r.p.dOutlet>=0?`submerg. = ${nf(r.p.dOutlet,1)} m`:`${nf(-r.p.dOutlet,1)} m above TW`),false);
 
   // pressure callouts at turbine inlet / outlet
   svg+=callout(turbInX-120,yTurb-20,"TURBINE IN",`${nf(r.pin.pG/1000,0)} kPa`,`${nf(r.pin.pAbs/1000,0)} kPa abs`);
@@ -673,6 +681,7 @@ function renderTiles(r){
     tile("Hydraulic power ρgQH",nf(r.Phyd/1e6,2),"MW",`shaft ${nf(r.Pshaft/1e6,2)} MW at η=${r.p.eta}`),
     tile("Margin above vapour (outlet)",nf(r.marginVap,1),"m",`${nf((r.pout.pAbs-r.wp.pv)/1000,0)} kPa · NPSH_a ${nf(r.NPSHa,1)} m`,cavCls),
     tile("Thoma number σ",Number.isFinite(r.sigma)?nf(r.sigma,2):"—","",r.flowing?"crit ≈ 0.1":""),
+    tile("Turbine centre vs tailwater",nf(r.zTurb,1),"m",`${nf(r.p.Htu,1)} m below upper surface · ${r.p.dOutlet>=0?nf(r.p.dOutlet,1)+" m submerged":nf(-r.p.dOutlet,1)+" m above TW"}`,cavCls),
     tile("Water density ρ",nf(r.wp.rho,1),"kg/m³",`at ${r.p.T} °C`),
     tile("Kinematic viscosity ν",nf(r.wp.nu*1e6,3),"mm²/s",`μ ${nf(r.wp.mu*1e3,3)} mPa·s`),
     tile("Vapour pressure p_v",nf(r.wp.pv/1000,2),"kPa",`at ${r.p.T} °C`),
