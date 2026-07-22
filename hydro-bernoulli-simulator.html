@@ -120,6 +120,7 @@ header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:1
 .s-dim{stroke:var(--ink-2);stroke-width:1.2;fill:none}
 .s-dim-tick{stroke:var(--ink-2);stroke-width:1.2}
 .s-datum{stroke:var(--ink-3);stroke-width:1.2;stroke-dasharray:2 4;fill:none}
+.s-bed{stroke:var(--earth-2);stroke-width:1.6;stroke-dasharray:4 3;opacity:.85}
 .s-lbl{fill:var(--ink-2);font:500 12px var(--sans)}
 .s-lbl-sm{fill:var(--ink-3);font:500 11px var(--sans)}
 .s-val{fill:var(--ink);font:600 12.5px var(--mono)}
@@ -256,7 +257,7 @@ footer.notes code{font-family:var(--mono);background:var(--surface-3);padding:1p
   <div class="layout">
     <!-- LEFT: schematic -->
     <section class="card stage">
-      <h2>System cross-section <span class="hint" id="sceneHint">headrace → penstock → turbine → tailrace</span></h2>
+      <h2>System cross-section <span class="hint" id="sceneHint">fixed reservoirs · move the penstock &amp; turbine</span></h2>
       <svg id="scene" viewBox="0 0 1080 600" preserveAspectRatio="xMidYMid meet" role="img"
            aria-label="Cross-section of the two-reservoir penstock and turbine system"></svg>
       <div class="scene-legend">
@@ -306,7 +307,7 @@ footer.notes code{font-family:var(--mono);background:var(--surface-3);padding:1p
     <h3>Model &amp; assumptions</h3>
     <div class="eq">z₁ + p₁/ρg + V₁²/2g  =  z₂ + p₂/ρg + V₂²/2g  +  h_turbine  +  h_loss &nbsp;&nbsp;⟶&nbsp;&nbsp; H_gross = h_turbine + h_loss</div>
     <ul>
-      <li>Both reservoir surfaces are at atmospheric pressure and (being large) essentially stationary, so V₁ ≈ V₂ ≈ 0 and levels are held constant.</li>
+      <li>Both reservoirs are fixed: their surfaces are at atmospheric pressure and (being large) essentially stationary, so V₁ ≈ V₂ ≈ 0, and their depth is a constant of the site. You design the scheme by <strong>positioning the penstock</strong> — its intake, the turbine's elevation and the outlet — within those fixed pools; the gross head is set by the (fixed) surface levels.</li>
       <li>Head loss <code>h_loss = (f·L/D + ΣK)·V²/2g</code>; Darcy friction factor <code>f</code> from the Swamee–Jain correlation (laminar <code>64/Re</code> below Re = 2300), iterated with the flow so it stays consistent with velocity and temperature.</li>
       <li>The turbine + wicket gate act as a variable nozzle: <code>Q = C_d·A_throat·(gate)·√(2g·H_net)</code>, so closing the gate throttles the flow and re-partitions the head. Shaft power <code>P = η·ρg·Q·H_net</code>.</li>
       <li>Water density, viscosity and vapour pressure are interpolated from standard tables at the chosen temperature. Pipe roughness ε comes from the selected material.</li>
@@ -408,7 +409,7 @@ const DEFAULTS={Hgross:60,dInlet:4,Htu:63,L1:300,L2:15,D:1.5,
 const CONFIG=[
  {group:"Reservoirs & penstock geometry",open:true,items:[
    {id:"Hgross",label:"Gross head (surface-to-surface)",min:0,max:250,step:1,unit:"m"},
-   {id:"dInlet",label:"Intake depth below upper surface",min:0,max:30,step:0.5,unit:"m"},
+   {id:"dInlet",label:"Intake depth below upper surface",min:0,max:14,step:0.5,unit:"m"},
    {id:"Htu",label:"Turbine centre below upper surface",min:2,max:260,step:0.5,unit:"m"},
    {id:"L1",label:"Penstock length (intake → turbine)",min:10,max:2000,step:5,unit:"m"},
    {id:"L2",label:"Draft length (turbine → tailrace)",min:1,max:200,step:1,unit:"m"},
@@ -487,33 +488,38 @@ const kPa=pa=>nf(pa/1000,0);
  * ================================================================== */
 function renderScene(r){
   const W=1080,H=600,topPad=54,botPad=86;
-  const zHi=Math.max(r.z1,r.zTurb,r.zIn,2);
-  const zLo=Math.min(r.z2,r.zTurb,r.zOut)-Math.max((zHi)*0.04,1);
-  const span=Math.max(zHi-zLo,8);
-  const y=z=>topPad+(zHi-z)/span*(H-topPad-botPad);
+  const RES_DEPTH=16;   // m — reservoirs are fixed pools of constant depth (a site constant, not moved by the pipe)
+  // The vertical scale is anchored to the fixed reservoir surfaces and beds — NOT to the
+  // penstock/turbine elevation — so moving the pipe slides it within the pools without resizing them.
+  const zTop=Math.max(r.z1,r.zTurb+2)+Math.max((r.z1-(r.z2-RES_DEPTH))*0.06,1.5);
+  const zBot=Math.min(r.z2-RES_DEPTH,r.zTurb-2,r.zOut-2);
+  const span=Math.max(zTop-zBot,10);
+  const y=z=>topPad+(zTop-z)/span*(H-topPad-botPad);
   // x anchors
   const resR=300, inX=resR, turbInX=612, turbCX=650, turbOutX=690, outX=800, resL2=W-40;
   const yIn=y(r.zIn), yTurb=y(r.zTurb), yOut=y(r.zOut), yS1=y(r.z1), yS2=y(r.z2);
+  const yUpBed=y(r.z1-RES_DEPTH), yLoBed=Math.max(y(r.z2-RES_DEPTH),yOut+10);
   const pipeW=Math.max(12,Math.min(46,6+r.p.D*6));
   const flowing=r.flowing && r.Q>1e-4;
   const dur=flowing?Math.max(.35,Math.min(9,3.2/Math.max(r.V,.05))).toFixed(2):"0";
 
-  const bottomUp=Math.min(yIn+90,H-botPad);
-  const bottomLo=Math.min(Math.max(yOut,yS2)+90,H-botPad+4);
-
   let svg="";
-  // ground beneath the penstock
+  // rock: under the upper reservoir, plus the mass the penstock is bored through
+  svg+=`<rect class="s-earth" x="40" y="${yUpBed}" width="${resR-40}" height="${H-yUpBed}"/>`;
   svg+=`<path class="s-earth" d="M ${resR} ${yIn} L ${resR} ${H} L ${W} ${H} L ${W} ${yS2}
         L ${outX} ${yOut} L ${turbOutX} ${yTurb} L ${turbInX} ${yTurb} Z"/>`;
-  // upper reservoir water + surface
-  svg+=`<rect class="s-water" x="40" y="${yS1}" width="${resR-40}" height="${bottomUp-yS1}" rx="3"/>`;
+  // upper reservoir — fixed depth
+  svg+=`<rect class="s-water" x="40" y="${yS1}" width="${resR-40}" height="${yUpBed-yS1}" rx="3"/>`;
   svg+=`<line class="s-water-line" x1="40" y1="${yS1}" x2="${resR}" y2="${yS1}"/>`;
-  // lower reservoir water + surface
-  svg+=`<rect class="s-water" x="${outX-8}" y="${yS2}" width="${resL2-(outX-8)+40}" height="${bottomLo-yS2}" rx="3"/>`;
+  svg+=`<line class="s-bed" x1="40" y1="${yUpBed}" x2="${resR}" y2="${yUpBed}"/>`;
+  // lower reservoir / tailrace — fixed depth
+  svg+=`<rect class="s-water" x="${outX-8}" y="${yS2}" width="${resL2-(outX-8)+40}" height="${yLoBed-yS2}" rx="3"/>`;
   svg+=`<line class="s-water-line" x1="${outX-8}" y1="${yS2}" x2="${W-20}" y2="${yS2}"/>`;
-  // datum
+  svg+=`<line class="s-bed" x1="${outX-8}" y1="${yLoBed}" x2="${W-20}" y2="${yLoBed}"/>`;
+  // datum + fixed-depth annotation
   svg+=`<line class="s-datum" x1="40" y1="${yS2}" x2="${W-20}" y2="${yS2}"/>`;
   svg+=`<text class="s-lbl-sm" x="46" y="${yS2-6}">tailwater datum  z = 0</text>`;
+  svg+=`<text class="s-lbl-sm" x="46" y="${yUpBed-5}">reservoir bed · fixed ${RES_DEPTH} m depth</text>`;
 
   // penstock (outer steel + inner)
   const pathUp=`M ${inX} ${yIn} L ${turbInX} ${yTurb}`;
@@ -577,7 +583,7 @@ function renderScene(r){
   }
   // reservoir labels
   svg+=`<text class="s-lbl" x="60" y="${yS1-10}">Headrace (upper reservoir)</text>`;
-  svg+=`<text class="s-lbl" x="${W-24}" y="${bottomLo-10}" text-anchor="end">Tailrace (lower reservoir)</text>`;
+  svg+=`<text class="s-lbl" x="${W-24}" y="${yLoBed-10}" text-anchor="end">Tailrace (lower reservoir)</text>`;
 
   document.getElementById("scene").innerHTML=svg;
 }
