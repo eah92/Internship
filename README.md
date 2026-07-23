@@ -42,11 +42,13 @@ z₁ + p₁/ρg + V₁²/2g  =  z₂ + p₂/ρg + V₂²/2g  +  h_turbine + h_lo
 
 ### User-controllable inputs
 
-* Gross head between the two free surfaces
-* Intake depth below the upper surface
-* **Turbine centre height below the upper surface** — moves the machine up or
-  down (changing its submergence and cavitation margin) while the gross head is
-  held constant; the outlet submergence below the tailwater is derived from it
+* Gross head between the two free (fixed) reservoir surfaces
+* The **three penstock positions** — the machine is designed by moving the pipe
+  within the fixed reservoirs, whose depth never changes:
+  * intake depth below the upper surface,
+  * turbine-centre height above the tailrace datum (− = below/submerged, which
+    sets the draft head and cavitation margin), and
+  * outlet depth below the tailrace surface (− = discharging above it)
 * Penstock length, draft length and inside diameter
 * Pipe material (PVC → riveted steel) and water temperature
 * Wicket-gate opening, turbine throat diameter and efficiency

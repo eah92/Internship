@@ -372,7 +372,10 @@ function solve(p){
   const hv=V*V/(2*G);
   const hf1=f*p.L1/p.D*hv, hf2=f*p.L2/p.D*hv, hUp=p.Kup*hv, hDn=p.Kdown*hv;
   const hL=hf1+hf2+hUp+hDn;
-  const z1=p.Hgross, z2=0, zIn=z1-p.dInlet, zTurb=z2-p.dOutlet, zOut=z2-p.dOutlet;
+  // Fixed reservoirs: z1 (upper surface) and z2=0 (tailrace datum). The user positions the
+  // penstock within them: intake depth (dInlet), turbine-centre height above datum (Hts) and
+  // outlet depth below the tailrace (dOutlet). These are independent penstock points.
+  const z1=p.Hgross, z2=0, zIn=z1-p.dInlet, zTurb=z2+p.Hts, zOut=z2-p.dOutlet;
   // EGL stations
   const eglRes1=z1, eglIn=z1-hUp, eglTin=eglIn-hf1, eglTout=eglTin-Hnet, eglOut=eglTout-hf2, eglRes2=eglOut-hDn;
   const hglIn=eglIn-hv, hglTin=eglTin-hv, hglTout=eglTout-hv, hglOut=eglOut-hv;
@@ -393,7 +396,7 @@ function solve(p){
   const Phyd=wp.rho*G*Q*Hnet, Pshaft=p.eta*Phyd;
   const dPturb=wp.rho*G*Hnet;
   const marginVap=(pout.pAbs-wp.pv)/(wp.rho*G);           // m of head above vapour at outlet
-  const sigma=Hnet>0?((PATM-wp.pv)/(wp.rho*G)+p.dOutlet)/Hnet:NaN; // Thoma cavitation number
+  const sigma=Hnet>0?((PATM-wp.pv)/(wp.rho*G)-p.Hts)/Hnet:NaN; // Thoma cavitation number (draft head = Hts)
   const NPSHa=(pout.pAbs-wp.pv)/(wp.rho*G)+hv;
   return {p,wp,A,At,Ct,rr,Ltot,Q,V,Re,f,regime,Hnet,hv,hf1,hf2,hUp,hDn,hL,
     z1,z2,zIn,zTurb,zOut,stations,res1,res2,minS,pin,pout,Phyd,Pshaft,dPturb,
@@ -404,13 +407,14 @@ function solve(p){
 /* ================================================================== *
  *  CONTROLS
  * ================================================================== */
-const DEFAULTS={Hgross:60,dInlet:4,Htu:63,L1:300,L2:15,D:1.5,
+const DEFAULTS={Hgross:60,dInlet:4,Hts:-2,dOutlet:5,L1:300,L2:15,D:1.5,
   material:"steel",T:15,alpha:75,dThroat:0.6,eta:0.88,Kup:1.1,Kdown:1.0,Cd:0.9};
 const CONFIG=[
  {group:"Reservoirs & penstock geometry",open:true,items:[
    {id:"Hgross",label:"Gross head (surface-to-surface)",min:0,max:250,step:1,unit:"m"},
-   {id:"dInlet",label:"Intake depth below upper surface",min:0,max:14,step:0.5,unit:"m"},
-   {id:"Htu",label:"Turbine centre below upper surface",min:2,max:260,step:0.5,unit:"m"},
+   {id:"dInlet",label:"Penstock intake — depth below upper surface",min:0,max:14,step:0.5,unit:"m"},
+   {id:"Hts",label:"Turbine centre — height above tailrace datum (− = below)",min:-15,max:40,step:0.5,unit:"m"},
+   {id:"dOutlet",label:"Penstock outlet — depth below tailrace (− = above)",min:-4,max:14,step:0.5,unit:"m"},
    {id:"L1",label:"Penstock length (intake → turbine)",min:10,max:2000,step:5,unit:"m"},
    {id:"L2",label:"Draft length (turbine → tailrace)",min:1,max:200,step:1,unit:"m"},
    {id:"D",label:"Penstock inside diameter",min:0.3,max:6,step:0.05,unit:"m"},
@@ -434,7 +438,7 @@ const state={...DEFAULTS};
 
 function fmtVal(id,v){
   if(id==="eta"||id==="Cd") return v.toFixed(2);
-  if(id==="dInlet"||id==="Htu"||id==="D"||id==="dThroat"||id==="Kup"||id==="Kdown") return v.toFixed(2).replace(/\.00$/,"");
+  if(id==="dInlet"||id==="Hts"||id==="dOutlet"||id==="D"||id==="dThroat"||id==="Kup"||id==="Kdown") return v.toFixed(2).replace(/\.00$/,"");
   return String(v);
 }
 function buildControls(){
@@ -469,13 +473,7 @@ function buildControls(){
     root.appendChild(d);
   });
 }
-function readParams(){
-  // Turbine centre is set relative to the UPPER surface (Htu, a drop from z1),
-  // so its submergence below the tailwater is derived and gross head is untouched:
-  //   zTurb = z1 - Htu = Hgross - Htu ;  dOutlet = z2 - zTurb = Htu - Hgross
-  const dOutlet=state.Htu-state.Hgross;
-  return {...state,dOutlet,eps:MATERIALS[state.material].eps};
-}
+function readParams(){return {...state,eps:MATERIALS[state.material].eps};}
 
 /* ================================================================== *
  *  NUMBER FORMAT
@@ -487,39 +485,44 @@ const kPa=pa=>nf(pa/1000,0);
  *  SCENE
  * ================================================================== */
 function renderScene(r){
-  const W=1080,H=600,topPad=54,botPad=86;
-  const RES_DEPTH=16;   // m — reservoirs are fixed pools of constant depth (a site constant, not moved by the pipe)
-  // The vertical scale is anchored to the fixed reservoir surfaces and beds — NOT to the
-  // penstock/turbine elevation — so moving the pipe slides it within the pools without resizing them.
-  const zTop=Math.max(r.z1,r.zTurb+2)+Math.max((r.z1-(r.z2-RES_DEPTH))*0.06,1.5);
-  const zBot=Math.min(r.z2-RES_DEPTH,r.zTurb-2,r.zOut-2);
-  const span=Math.max(zTop-zBot,10);
-  const y=z=>topPad+(zTop-z)/span*(H-topPad-botPad);
+  const W=1080,H=600;
+  // ---- Fixed-tank schematic -------------------------------------------------
+  // Both reservoirs are drawn as tanks of CONSTANT depth (fixed pixel box); the blue
+  // water never changes size. Only the three penstock points move: the intake (within
+  // the upper tank), the turbine centre (measured from the datum) and the outlet (within
+  // the lower tank). Gross head is the vertical GAP between the two fixed tank surfaces.
+  const RES_DEPTH=16, TANK_PX=112, sc=TANK_PX/RES_DEPTH;   // px per metre inside the tanks
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const yS1=96, yUpBed=yS1+TANK_PX;                         // upper tank — fixed box
+  const headGap=clamp(96+r.p.Hgross*1.35,132,326);          // gross-head gap (schematic, labelled true value)
+  const yS2=yS1+headGap, yLoBed=yS2+TANK_PX;                // lower tank — fixed box
+  const yIn=yS1+r.p.dInlet*sc;                              // intake, within the upper tank
+  const yOut=clamp(yS2+r.p.dOutlet*sc,46,yLoBed-4);         // outlet, within/near the lower tank
+  const yTurb=clamp(yS2-r.p.Hts*sc,54,yLoBed-4);            // turbine centre, measured up from the datum
   // x anchors
   const resR=300, inX=resR, turbInX=612, turbCX=650, turbOutX=690, outX=800, resL2=W-40;
-  const yIn=y(r.zIn), yTurb=y(r.zTurb), yOut=y(r.zOut), yS1=y(r.z1), yS2=y(r.z2);
-  const yUpBed=y(r.z1-RES_DEPTH), yLoBed=Math.max(y(r.z2-RES_DEPTH),yOut+10);
   const pipeW=Math.max(12,Math.min(46,6+r.p.D*6));
   const flowing=r.flowing && r.Q>1e-4;
   const dur=flowing?Math.max(.35,Math.min(9,3.2/Math.max(r.V,.05))).toFixed(2):"0";
 
   let svg="";
-  // rock: under the upper reservoir, plus the mass the penstock is bored through
-  svg+=`<rect class="s-earth" x="40" y="${yUpBed}" width="${resR-40}" height="${H-yUpBed}"/>`;
-  svg+=`<path class="s-earth" d="M ${resR} ${yIn} L ${resR} ${H} L ${W} ${H} L ${W} ${yS2}
-        L ${outX} ${yOut} L ${turbOutX} ${yTurb} L ${turbInX} ${yTurb} Z"/>`;
-  // upper reservoir — fixed depth
-  svg+=`<rect class="s-water" x="40" y="${yS1}" width="${resR-40}" height="${yUpBed-yS1}" rx="3"/>`;
+  // ground/rock: terrain profile with the two tank basins; the penstock is bored through the hill
+  svg+=`<path class="s-earth" d="M 0 ${yS1} L 40 ${yS1} L 40 ${yUpBed} L ${resR} ${yUpBed} L ${resR} ${yS1}
+        L ${outX} ${yS2} L ${outX} ${yLoBed} L ${resL2} ${yLoBed} L ${resL2} ${yS2} L ${W} ${yS2}
+        L ${W} ${H} L 0 ${H} Z"/>`;
+  // upper tank (headrace) — fixed depth
+  svg+=`<rect class="s-water" x="40" y="${yS1}" width="${resR-40}" height="${TANK_PX}" rx="3"/>`;
   svg+=`<line class="s-water-line" x1="40" y1="${yS1}" x2="${resR}" y2="${yS1}"/>`;
   svg+=`<line class="s-bed" x1="40" y1="${yUpBed}" x2="${resR}" y2="${yUpBed}"/>`;
-  // lower reservoir / tailrace — fixed depth
-  svg+=`<rect class="s-water" x="${outX-8}" y="${yS2}" width="${resL2-(outX-8)+40}" height="${yLoBed-yS2}" rx="3"/>`;
-  svg+=`<line class="s-water-line" x1="${outX-8}" y1="${yS2}" x2="${W-20}" y2="${yS2}"/>`;
-  svg+=`<line class="s-bed" x1="${outX-8}" y1="${yLoBed}" x2="${W-20}" y2="${yLoBed}"/>`;
-  // datum + fixed-depth annotation
-  svg+=`<line class="s-datum" x1="40" y1="${yS2}" x2="${W-20}" y2="${yS2}"/>`;
-  svg+=`<text class="s-lbl-sm" x="46" y="${yS2-6}">tailwater datum  z = 0</text>`;
-  svg+=`<text class="s-lbl-sm" x="46" y="${yUpBed-5}">reservoir bed · fixed ${RES_DEPTH} m depth</text>`;
+  // lower tank (tailrace) — fixed depth
+  svg+=`<rect class="s-water" x="${outX}" y="${yS2}" width="${resL2-outX}" height="${TANK_PX}" rx="3"/>`;
+  svg+=`<line class="s-water-line" x1="${outX}" y1="${yS2}" x2="${resL2}" y2="${yS2}"/>`;
+  svg+=`<line class="s-bed" x1="${outX}" y1="${yLoBed}" x2="${resL2}" y2="${yLoBed}"/>`;
+  // datum + fixed-depth annotations
+  svg+=`<line class="s-datum" x1="40" y1="${yS2}" x2="${resL2}" y2="${yS2}"/>`;
+  svg+=`<text class="s-lbl-sm" x="60" y="${yS2-6}">tailrace datum  z = 0</text>`;
+  svg+=`<text class="s-lbl-sm" x="46" y="${yUpBed-6}">fixed ${RES_DEPTH} m tank</text>`;
+  svg+=`<text class="s-lbl-sm" x="${(outX+resL2)/2+30}" y="${yS2+17}" text-anchor="middle">fixed ${RES_DEPTH} m tank</text>`;
 
   // penstock (outer steel + inner)
   const pathUp=`M ${inX} ${yIn} L ${turbInX} ${yTurb}`;
@@ -561,18 +564,15 @@ function renderScene(r){
   svg+=`<rect class="s-gate-fill" x="${gx+1}" y="${gy+1}" width="${(gw-2)*r.p.alpha/100}" height="7" rx="3"/>`;
   svg+=`<text class="s-lbl-sm" x="${turbCX}" y="${gy+24}" text-anchor="middle">wicket gate ${r.p.alpha.toFixed(0)}%</text>`;
 
-  // dimension lines: Hgross (far left)
-  svg+=dimV(22,yS1,yS2,`H_gross = ${nf(r.p.Hgross,0)} m`,true);
-  // dInlet just left of dam face
-  if(r.p.dInlet>0.01) svg+=dimV(resR-14,yS1,yIn,`d_in = ${nf(r.p.dInlet,1)} m`,false);
-  // Htu: upper surface -> turbine centre (the user control), just left of the turbine
-  svg+=dimV(turbInX-22,yS1,yTurb,`upper→turbine = ${nf(r.p.Htu,1)} m`,false);
-  // derived outlet submergence near the outlet
-  svg+=dimV(outX+22,yS2,yOut,(r.p.dOutlet>=0?`submerg. = ${nf(r.p.dOutlet,1)} m`:`${nf(-r.p.dOutlet,1)} m above TW`),false);
+  // dimensions — everything is a penstock position within the fixed tanks
+  svg+=dimV(20,yS1,yS2,`H_gross = ${nf(r.p.Hgross,0)} m`,true);
+  if(r.p.dInlet>0.01) svg+=dimV(resR-14,yS1,yIn,`intake ${nf(r.p.dInlet,1)} m`,false);
+  svg+=dimV(turbInX-16,yS2,yTurb,(r.p.Hts>=0?`+${nf(r.p.Hts,1)} m`:`${nf(r.p.Hts,1)} m`),false);
+  svg+=dimV(outX+22,yS2,yOut,(r.p.dOutlet>=0?`outlet ${nf(r.p.dOutlet,1)} m`:`${nf(-r.p.dOutlet,1)} m above`),false);
 
   // pressure callouts at turbine inlet / outlet
-  svg+=callout(turbInX-120,yTurb-20,"TURBINE IN",`${nf(r.pin.pG/1000,0)} kPa`,`${nf(r.pin.pAbs/1000,0)} kPa abs`);
-  svg+=callout(outX+2,yTurb-70,"TURBINE OUT",`${nf(r.pout.pG/1000,0)} kPa`,`${nf(r.pout.pAbs/1000,0)} kPa abs`);
+  svg+=callout(turbInX-142,yTurb-48,"TURBINE IN",`${nf(r.pin.pG/1000,0)} kPa`,`${nf(r.pin.pAbs/1000,0)} kPa abs`);
+  svg+=callout(outX+4,yTurb-72,"TURBINE OUT",`${nf(r.pout.pG/1000,0)} kPa`,`${nf(r.pout.pAbs/1000,0)} kPa abs`);
 
   // cavitation glow at min station
   if(r.flowing && r.minS.pAbs<=r.wp.pv+15000){
@@ -583,7 +583,7 @@ function renderScene(r){
   }
   // reservoir labels
   svg+=`<text class="s-lbl" x="60" y="${yS1-10}">Headrace (upper reservoir)</text>`;
-  svg+=`<text class="s-lbl" x="${W-24}" y="${yLoBed-10}" text-anchor="end">Tailrace (lower reservoir)</text>`;
+  svg+=`<text class="s-lbl" x="${resL2}" y="${yLoBed-10}" text-anchor="end">Tailrace (lower reservoir)</text>`;
 
   document.getElementById("scene").innerHTML=svg;
 }
@@ -687,7 +687,7 @@ function renderTiles(r){
     tile("Hydraulic power ρgQH",nf(r.Phyd/1e6,2),"MW",`shaft ${nf(r.Pshaft/1e6,2)} MW at η=${r.p.eta}`),
     tile("Margin above vapour (outlet)",nf(r.marginVap,1),"m",`${nf((r.pout.pAbs-r.wp.pv)/1000,0)} kPa · NPSH_a ${nf(r.NPSHa,1)} m`,cavCls),
     tile("Thoma number σ",Number.isFinite(r.sigma)?nf(r.sigma,2):"—","",r.flowing?"crit ≈ 0.1":""),
-    tile("Turbine centre vs tailwater",nf(r.zTurb,1),"m",`${nf(r.p.Htu,1)} m below upper surface · ${r.p.dOutlet>=0?nf(r.p.dOutlet,1)+" m submerged":nf(-r.p.dOutlet,1)+" m above TW"}`,cavCls),
+    tile("Turbine setting vs tailrace",nf(r.zTurb,1),"m",`${r.zTurb>=0?nf(r.zTurb,1)+" m above datum":nf(-r.zTurb,1)+" m submerged"} · draft head Hs ${nf(r.zTurb,1)} m`,cavCls),
     tile("Water density ρ",nf(r.wp.rho,1),"kg/m³",`at ${r.p.T} °C`),
     tile("Kinematic viscosity ν",nf(r.wp.nu*1e6,3),"mm²/s",`μ ${nf(r.wp.mu*1e3,3)} mPa·s`),
     tile("Vapour pressure p_v",nf(r.wp.pv/1000,2),"kPa",`at ${r.p.T} °C`),
