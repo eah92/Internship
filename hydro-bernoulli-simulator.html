@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Penstock &amp; Turbine — Bernoulli Hydraulics Simulator</title>
+<title>Bulb Turbine &amp; Draft Tube — Bernoulli Hydraulics Simulator</title>
 </head>
 <body>
 <style>
@@ -124,6 +124,8 @@ header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:1
 .s-lbl{fill:var(--ink-2);font:500 12px var(--sans)}
 .s-lbl-sm{fill:var(--ink-3);font:500 11px var(--sans)}
 .s-val{fill:var(--ink);font:600 12.5px var(--mono)}
+.s-concrete{fill:var(--steel-2);stroke:var(--steel);stroke-width:1.3;opacity:.94}
+.s-bulb{fill:var(--steel);stroke:var(--surface);stroke-width:1.5}
 .s-turb-body{fill:var(--surface-3);stroke:var(--steel);stroke-width:1.5}
 .s-runner{fill:none;stroke:var(--turbine);stroke-width:2.4}
 .s-runner-c{fill:var(--turbine);opacity:.18}
@@ -242,11 +244,13 @@ footer.notes code{font-family:var(--mono);background:var(--surface-3);padding:1p
 <div class="wrap">
   <header class="top">
     <div class="brand">
-      <span class="eyebrow">Hydropower · Fluid Mechanics</span>
-      <h1>Penstock &amp; Turbine — Bernoulli Hydraulics Simulator</h1>
-      <p>Steady-flow energy balance between two reservoirs through a penstock and turbine, solved with the extended
-         Bernoulli equation including friction, minor losses and turbine head. Drive the controls; the section,
-         readouts and grade lines update live.</p>
+      <span class="eyebrow">Run-of-River Hydropower · Fluid Mechanics</span>
+      <h1>Bulb Turbine &amp; Draft Tube — Bernoulli Hydraulics Simulator</h1>
+      <p>Steady-flow energy balance across a run-of-river <strong>bulb turbine</strong>: water passes from the
+         headwater river through the intake, the horizontal bulb unit and the diverging <strong>draft-tube
+         channel</strong> into the tailwater. Solved with the extended Bernoulli equation including friction,
+         minor losses and turbine head (design flow ≈ 9 000 cusecs). Drive the controls; the section, readouts
+         and grade lines update live.</p>
     </div>
     <div class="tools">
       <button class="btn" id="resetBtn" title="Restore defaults">↺ Reset</button>
@@ -257,15 +261,15 @@ footer.notes code{font-family:var(--mono);background:var(--surface-3);padding:1p
   <div class="layout">
     <!-- LEFT: schematic -->
     <section class="card stage">
-      <h2>System cross-section <span class="hint" id="sceneHint">fixed reservoirs · move the penstock &amp; turbine</span></h2>
+      <h2>Powerhouse cross-section <span class="hint" id="sceneHint">headwater → intake → bulb turbine → draft tube → tailwater</span></h2>
       <svg id="scene" viewBox="0 0 1080 600" preserveAspectRatio="xMidYMid meet" role="img"
-           aria-label="Cross-section of the two-reservoir penstock and turbine system"></svg>
+           aria-label="Cross-section of the run-of-river bulb turbine, draft tube and river"></svg>
       <div class="scene-legend">
-        <span><i class="swatch" style="background:var(--water)"></i>Water</span>
-        <span><i class="swatch" style="background:var(--steel)"></i>Penstock (steel)</span>
-        <span><i class="swatch" style="background:var(--turbine)"></i>Turbine runner + wicket gate</span>
-        <span><i class="swatch" style="background:var(--earth)"></i>Ground</span>
-        <span style="margin-left:auto;color:var(--ink-3)">Flow animation speed ∝ pipe velocity</span>
+        <span><i class="swatch" style="background:var(--water)"></i>River water</span>
+        <span><i class="swatch" style="background:var(--steel)"></i>Powerhouse (concrete)</span>
+        <span><i class="swatch" style="background:var(--turbine)"></i>Bulb unit + runner + wicket gate</span>
+        <span><i class="swatch" style="background:var(--earth)"></i>Riverbed</span>
+        <span style="margin-left:auto;color:var(--ink-3)">Flow animation speed ∝ passage velocity</span>
       </div>
     </section>
 
@@ -307,12 +311,12 @@ footer.notes code{font-family:var(--mono);background:var(--surface-3);padding:1p
     <h3>Model &amp; assumptions</h3>
     <div class="eq">z₁ + p₁/ρg + V₁²/2g  =  z₂ + p₂/ρg + V₂²/2g  +  h_turbine  +  h_loss &nbsp;&nbsp;⟶&nbsp;&nbsp; H_gross = h_turbine + h_loss</div>
     <ul>
-      <li>Both reservoirs are fixed: their surfaces are at atmospheric pressure and (being large) essentially stationary, so V₁ ≈ V₂ ≈ 0, and their depth is a constant of the site. You design the scheme by <strong>positioning the penstock</strong> — its intake, the turbine's elevation and the outlet — within those fixed pools; the gross head is set by the (fixed) surface levels.</li>
-      <li>Head loss <code>h_loss = (f·L/D + ΣK)·V²/2g</code>; Darcy friction factor <code>f</code> from the Swamee–Jain correlation (laminar <code>64/Re</code> below Re = 2300), iterated with the flow so it stays consistent with velocity and temperature.</li>
-      <li>The turbine + wicket gate act as a variable nozzle: <code>Q = C_d·A_throat·(gate)·√(2g·H_net)</code>, so closing the gate throttles the flow and re-partitions the head. Shaft power <code>P = η·ρg·Q·H_net</code>.</li>
-      <li>Water density, viscosity and vapour pressure are interpolated from standard tables at the chosen temperature. Pipe roughness ε comes from the selected material.</li>
-      <li>Cavitation is flagged when the minimum absolute pressure along the pipe (usually the turbine outlet/draft tube or a shallow intake) falls to the water's vapour pressure; a low Thoma σ is also warned. Backflow / no-flow is flagged when the tailrace is at or above the headrace.</li>
-      <li>This is a steady-state teaching model — it does not resolve water-hammer transients, unsteady runner dynamics, or real turbine efficiency curves. Values are indicative.</li>
+      <li>A <strong>run-of-river bulb turbine</strong>: the headwater and tailwater are the river up- and downstream of the barrage, both at atmospheric pressure. The gross head is the difference between the two river levels (typically low — a few metres to a few tens of metres). Design flow here is ≈ 9 000 cusecs (≈ 255 m³/s).</li>
+      <li>The scheme is set by <strong>positioning the water passage</strong> — the intake sill, the bulb (turbine) centreline and the draft-tube outlet — relative to the two fixed river levels; the riverbed is fixed while the impounded headwater deepens with head.</li>
+      <li>Head loss <code>h_loss = (f·L/D + ΣK)·V²/2g</code> through the intake and draft-tube passage; Darcy friction factor <code>f</code> from the Swamee–Jain correlation (laminar <code>64/Re</code> below Re = 2300), iterated with the flow. The pressurised conduit is treated with Darcy–Weisbach (not open-channel Manning).</li>
+      <li>The runner + wicket gate act as a variable nozzle: <code>Q = C_d·A_throat·(gate)·√(2g·H_net)</code>, so closing the gate throttles the flow and re-partitions the head. Shaft power <code>P = η·ρg·Q·H_net</code>.</li>
+      <li>Cavitation is flagged when the minimum absolute pressure (usually the runner exit / draft tube) reaches the water's vapour pressure; a low Thoma σ is also warned — bulb turbines are set <em>below</em> tailwater for margin. Backflow / no-flow is flagged when the tailwater is at or above the headwater.</li>
+      <li>This is a steady-state teaching model — it does not resolve surge/water-hammer transients, unsteady runner dynamics, or real turbine efficiency curves. Values are indicative.</li>
     </ul>
   </footer>
 </div>
@@ -381,10 +385,10 @@ function solve(p){
   const hglIn=eglIn-hv, hglTin=eglTin-hv, hglTout=eglTout-hv, hglOut=eglOut-hv;
   // pipe stations for pressure scan
   const stations=[
-    {key:"in",   name:"penstock intake", x:0,      z:zIn,   egl:eglIn,   hgl:hglIn },
-    {key:"tin",  name:"turbine inlet",   x:p.L1,   z:zTurb, egl:eglTin,  hgl:hglTin},
-    {key:"tout", name:"turbine outlet",  x:p.L1,   z:zTurb, egl:eglTout, hgl:hglTout},
-    {key:"out",  name:"draft outlet",    x:Ltot,   z:zOut,  egl:eglOut,  hgl:hglOut},
+    {key:"in",   name:"intake",         x:0,      z:zIn,   egl:eglIn,   hgl:hglIn },
+    {key:"tin",  name:"runner inlet",   x:p.L1,   z:zTurb, egl:eglTin,  hgl:hglTin},
+    {key:"tout", name:"runner outlet",  x:p.L1,   z:zTurb, egl:eglTout, hgl:hglTout},
+    {key:"out",  name:"draft-tube outlet", x:Ltot, z:zOut, egl:eglOut,  hgl:hglOut},
   ];
   stations.forEach(s=>{s.pHead=s.hgl-s.z; s.pG=wp.rho*G*s.pHead; s.pAbs=s.pG+PATM;});
   const res1={name:"upper pool",x:0,z:zIn,egl:eglRes1,hgl:eglRes1};
@@ -407,31 +411,31 @@ function solve(p){
 /* ================================================================== *
  *  CONTROLS
  * ================================================================== */
-const DEFAULTS={Hgross:60,dInlet:4,Hts:-2,dOutlet:5,L1:300,L2:15,D:1.5,
-  material:"steel",T:15,alpha:75,dThroat:0.6,eta:0.88,Kup:1.1,Kdown:1.0,Cd:0.9};
+const DEFAULTS={Hgross:16,dInlet:7,Hts:-6,dOutlet:8,L1:25,L2:45,D:9,
+  material:"concrete",T:15,alpha:100,dThroat:4.5,eta:0.90,Kup:0.3,Kdown:0.4,Cd:0.92};
 const CONFIG=[
- {group:"Reservoirs & penstock geometry",open:true,items:[
-   {id:"Hgross",label:"Gross head (surface-to-surface)",min:0,max:250,step:1,unit:"m"},
-   {id:"dInlet",label:"Penstock intake — depth below upper surface",min:0,max:14,step:0.5,unit:"m"},
-   {id:"Hts",label:"Turbine centre — height above tailrace datum (− = below)",min:-15,max:40,step:0.5,unit:"m"},
-   {id:"dOutlet",label:"Penstock outlet — depth below tailrace (− = above)",min:-4,max:14,step:0.5,unit:"m"},
-   {id:"L1",label:"Penstock length (intake → turbine)",min:10,max:2000,step:5,unit:"m"},
-   {id:"L2",label:"Draft length (turbine → tailrace)",min:1,max:200,step:1,unit:"m"},
-   {id:"D",label:"Penstock inside diameter",min:0.3,max:6,step:0.05,unit:"m"},
+ {group:"River & powerhouse geometry",open:true,items:[
+   {id:"Hgross",label:"Gross head (headwater − tailwater level)",min:2,max:45,step:0.5,unit:"m"},
+   {id:"dInlet",label:"Intake sill — depth below headwater",min:0,max:20,step:0.5,unit:"m"},
+   {id:"Hts",label:"Bulb centreline — height above tailwater (− = submerged)",min:-20,max:10,step:0.5,unit:"m"},
+   {id:"dOutlet",label:"Draft-tube outlet — depth below tailwater",min:0,max:20,step:0.5,unit:"m"},
+   {id:"L1",label:"Intake passage length (river → runner)",min:5,max:150,step:5,unit:"m"},
+   {id:"L2",label:"Draft-tube length (runner → tailwater)",min:5,max:200,step:5,unit:"m"},
+   {id:"D",label:"Water-passage diameter",min:3,max:16,step:0.2,unit:"m"},
  ]},
- {group:"Water & pipe",open:true,items:[
-   {id:"material",label:"Pipe material",type:"select"},
+ {group:"Water & passage",open:true,items:[
+   {id:"material",label:"Passage lining",type:"select"},
    {id:"T",label:"Water temperature",min:0,max:95,step:1,unit:"°C"},
  ]},
  {group:"Turbine & wicket gate",open:true,items:[
    {id:"alpha",label:"Wicket-gate opening",min:0,max:100,step:1,unit:"%"},
-   {id:"dThroat",label:"Turbine throat diameter (full gate)",min:0.1,max:4,step:0.05,unit:"m"},
+   {id:"dThroat",label:"Runner throat diameter (full gate)",min:1,max:10,step:0.1,unit:"m"},
    {id:"eta",label:"Turbine efficiency η",min:0.5,max:0.95,step:0.01,unit:""},
  ]},
  {group:"Modelling assumptions",open:false,items:[
-   {id:"Kup",label:"Upstream minor-loss ΣK (entrance+bends)",min:0,max:6,step:0.1,unit:""},
-   {id:"Kdown",label:"Downstream minor-loss ΣK (exit+bends)",min:0,max:6,step:0.1,unit:""},
-   {id:"Cd",label:"Turbine discharge coefficient C_d",min:0.6,max:1,step:0.01,unit:""},
+   {id:"Kup",label:"Intake minor-loss ΣK (trashrack + entrance)",min:0,max:3,step:0.05,unit:""},
+   {id:"Kdown",label:"Draft-tube exit loss ΣK",min:0,max:3,step:0.05,unit:""},
+   {id:"Cd",label:"Runner discharge coefficient C_d",min:0.6,max:1,step:0.01,unit:""},
  ]},
 ];
 const state={...DEFAULTS};
@@ -485,105 +489,96 @@ const kPa=pa=>nf(pa/1000,0);
  *  SCENE
  * ================================================================== */
 function renderScene(r){
-  const W=1080,H=600;
-  // ---- Fixed-tank schematic -------------------------------------------------
-  // Both reservoirs are drawn as tanks of CONSTANT depth (fixed pixel box); the blue
-  // water never changes size. Only the three penstock points move: the intake (within
-  // the upper tank), the turbine centre (measured from the datum) and the outlet (within
-  // the lower tank). Gross head is the vertical GAP between the two fixed tank surfaces.
-  const RES_DEPTH=16, TANK_PX=112, sc=TANK_PX/RES_DEPTH;   // px per metre inside the tanks
+  const W=1080,H=600,TOP=40,BOT=48,PLOT=H-TOP-BOT;
+  // ---- Run-of-river bulb turbine, to a uniform vertical scale --------------
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-  const yS1=96, yUpBed=yS1+TANK_PX;                         // upper tank — fixed box
-  const headGap=clamp(96+r.p.Hgross*1.35,132,326);          // gross-head gap (schematic, labelled true value)
-  const yS2=yS1+headGap, yLoBed=yS2+TANK_PX;                // lower tank — fixed box
-  const yIn=yS1+r.p.dInlet*sc;                              // intake, within the upper tank
-  const yOut=clamp(yS2+r.p.dOutlet*sc,46,yLoBed-4);         // outlet, within/near the lower tank
-  const yTurb=clamp(yS2-r.p.Hts*sc,54,yLoBed-4);            // turbine centre, measured up from the datum
+  const z1=r.z1, z2=r.z2, zTurb=r.zTurb, zIn=r.zIn, zOut=r.zOut, D=r.p.D;
+  const zBedNat=-12;                                          // natural riverbed (fixed) for the river reaches
+  const zFloorMin=Math.min(zTurb-D*0.55, zOut-D*0.78, zBedNat)-1.5;
+  const zTopV=z1+8, zBotV=zFloorMin-2, span=Math.max(zTopV-zBotV,22);
+  const y=z=>TOP+(zTopV-z)/span*PLOT, sc=PLOT/span;           // sc = px per metre
   // x anchors
-  const resR=300, inX=resR, turbInX=612, turbCX=650, turbOutX=690, outX=800, resL2=W-40;
-  const pipeW=Math.max(12,Math.min(46,6+r.p.D*6));
+  const phL=440, phR=706, bulbX=520, runnerX=560;
+  const yS1=y(z1), yS2=y(z2), yBed=y(zBedNat), yTurb=y(zTurb), yIn=y(zIn), yOut=y(zOut);
+  const yDeck=y(z1+6), yFound=Math.min(H-6, y(zFloorMin));
+  const hp=Math.max(11, D*0.5*sc), rb=hp*0.60;                // passage half-height, bulb radius
   const flowing=r.flowing && r.Q>1e-4;
-  const dur=flowing?Math.max(.35,Math.min(9,3.2/Math.max(r.V,.05))).toFixed(2):"0";
+  const dur=flowing?clamp(10/Math.max(r.V,.3),.5,8).toFixed(2):"0";
 
   let svg="";
-  // ground/rock: terrain profile with the two tank basins; the penstock is bored through the hill
-  svg+=`<path class="s-earth" d="M 0 ${yS1} L 40 ${yS1} L 40 ${yUpBed} L ${resR} ${yUpBed} L ${resR} ${yS1}
-        L ${outX} ${yS2} L ${outX} ${yLoBed} L ${resL2} ${yLoBed} L ${resL2} ${yS2} L ${W} ${yS2}
-        L ${W} ${H} L 0 ${H} Z"/>`;
-  // upper tank (headrace) — fixed depth
-  svg+=`<rect class="s-water" x="40" y="${yS1}" width="${resR-40}" height="${TANK_PX}" rx="3"/>`;
-  svg+=`<line class="s-water-line" x1="40" y1="${yS1}" x2="${resR}" y2="${yS1}"/>`;
-  svg+=`<line class="s-bed" x1="40" y1="${yUpBed}" x2="${resR}" y2="${yUpBed}"/>`;
-  // lower tank (tailrace) — fixed depth
-  svg+=`<rect class="s-water" x="${outX}" y="${yS2}" width="${resL2-outX}" height="${TANK_PX}" rx="3"/>`;
-  svg+=`<line class="s-water-line" x1="${outX}" y1="${yS2}" x2="${resL2}" y2="${yS2}"/>`;
-  svg+=`<line class="s-bed" x1="${outX}" y1="${yLoBed}" x2="${resL2}" y2="${yLoBed}"/>`;
-  // datum + fixed-depth annotations
-  svg+=`<line class="s-datum" x1="40" y1="${yS2}" x2="${resL2}" y2="${yS2}"/>`;
-  svg+=`<text class="s-lbl-sm" x="60" y="${yS2-6}">tailrace datum  z = 0</text>`;
-  svg+=`<text class="s-lbl-sm" x="46" y="${yUpBed-6}">fixed ${RES_DEPTH} m tank</text>`;
-  svg+=`<text class="s-lbl-sm" x="${(outX+resL2)/2+30}" y="${yS2+17}" text-anchor="middle">fixed ${RES_DEPTH} m tank</text>`;
+  // valley + riverbed (earth rises to the valley sides, flat bed across the middle)
+  svg+=`<path class="s-earth" d="M 0 ${y(z1+3)} L 62 ${yBed} L ${W-62} ${yBed} L ${W} ${y(z1+3)} L ${W} ${H} L 0 ${H} Z"/>`;
+  // headwater (upstream river) — impounded, deeper than tailwater
+  svg+=`<rect class="s-water" x="62" y="${yS1}" width="${phL-62}" height="${yBed-yS1}"/>`;
+  svg+=`<line class="s-water-line" x1="62" y1="${yS1}" x2="${phL}" y2="${yS1}"/>`;
+  // tailwater (downstream river)
+  svg+=`<rect class="s-water" x="${phR}" y="${yS2}" width="${W-62-phR}" height="${yBed-yS2}"/>`;
+  svg+=`<line class="s-water-line" x1="${phR}" y1="${yS2}" x2="${W-62}" y2="${yS2}"/>`;
+  // tailwater level = datum
+  svg+=`<line class="s-datum" x1="24" y1="${yS2}" x2="${W-62}" y2="${yS2}"/>`;
+  svg+=`<line class="s-datum" x1="24" y1="${yS1}" x2="62" y2="${yS1}"/>`;
 
-  // penstock (outer steel + inner)
-  const pathUp=`M ${inX} ${yIn} L ${turbInX} ${yTurb}`;
-  const pathDn=`M ${turbOutX} ${yTurb} L ${outX} ${yOut}`;
-  svg+=`<path class="s-pipe" style="stroke-width:${pipeW}" d="${pathUp}"/>`;
-  svg+=`<path class="s-pipe" style="stroke-width:${pipeW}" d="${pathDn}"/>`;
-  svg+=`<path class="s-pipe-in" style="stroke-width:${Math.max(6,pipeW-6)}" d="${pathUp}"/>`;
-  svg+=`<path class="s-pipe-in" style="stroke-width:${Math.max(6,pipeW-6)}" d="${pathDn}"/>`;
-  // animated flow line
+  // powerhouse concrete block + deck + gantry crane
+  svg+=`<rect class="s-concrete" x="${phL}" y="${yDeck}" width="${phR-phL}" height="${yFound-yDeck}"/>`;
+  svg+=`<rect class="s-concrete" x="${phL-12}" y="${yDeck-15}" width="${phR-phL+24}" height="16" rx="2"/>`;
+  svg+=`<rect fill="#c0554e" x="${bulbX-7}" y="${yDeck-31}" width="14" height="17" rx="2"/>`;
+  svg+=`<rect fill="#c0554e" x="${bulbX-30}" y="${yDeck-17}" width="60" height="4" rx="2"/>`;
+  svg+=`<text class="s-lbl-sm" x="${(phL+phR)/2}" y="${yDeck-21}" text-anchor="middle">Powerhouse</text>`;
+
+  // water passage: intake → bulb → diverging draft tube → outlet
+  const px=[phL, phL+58, runnerX, runnerX+50, phR];
+  const cz=[zIn-D/2, zTurb, zTurb, (zTurb+zOut)/2, zOut];
+  const hz=[D/2, D/2, D/2, D*0.62, D*0.78];
+  const roofPts=px.map((x,i)=>`${x},${y(cz[i]+hz[i]).toFixed(1)}`);
+  const floorPts=px.map((x,i)=>`${x},${y(cz[i]-hz[i]).toFixed(1)}`);
+  svg+=`<path class="s-water" d="M ${roofPts.join(" L ")} L ${floorPts.slice().reverse().join(" L ")} Z"/>`;
+  // animated flow along the passage centreline
+  const cline=px.map((x,i)=>`${x},${y(cz[i]).toFixed(1)}`).join(" ");
   const flowCls=flowing?"s-flow run":"s-flow";
-  svg+=`<path class="${flowCls}" style="stroke-width:${Math.max(3,pipeW-12)};animation-duration:${dur}s" d="${pathUp}"/>`;
-  svg+=`<path class="${flowCls}" style="stroke-width:${Math.max(3,pipeW-12)};animation-duration:${dur}s" d="${pathDn}"/>`;
-  // flow arrows along upstream pipe
+  svg+=`<polyline class="${flowCls}" fill="none" style="stroke-width:${clamp(hp*0.22,3,8).toFixed(0)};animation-duration:${dur}s" points="${cline}"/>`;
   if(flowing){
-    const ax=[0.42,0.72], v=[turbInX-inX,yTurb-yIn], len=Math.hypot(v[0],v[1]);
-    const nx=v[0]/len, ny=v[1]/len;
-    ax.forEach(t=>{const px=inX+v[0]*t, py=yIn+v[1]*t, s=7;
-      svg+=`<path class="s-arrow" d="M ${px+nx*s} ${py+ny*s} L ${px-nx*s+ny*s} ${py-ny*s-nx*s} L ${px-nx*s-ny*s} ${py-ny*s+nx*s} Z"/>`;});
-    svg+=`<path class="s-arrow" d="M ${(turbOutX+outX)/2+7} ${yTurb} L ${(turbOutX+outX)/2-4} ${yTurb-6} L ${(turbOutX+outX)/2-4} ${yTurb+6} Z"/>`;
+    [0.30,0.60,0.86].forEach(t=>{const X=px[0]+(px[4]-px[0])*t; let cy=yTurb;
+      for(let i=0;i<px.length-1;i++){if(X>=px[i]&&X<=px[i+1]){const f=(X-px[i])/(px[i+1]-px[i]);cy=y(cz[i]+f*(cz[i+1]-cz[i]));break;}}
+      svg+=`<path class="s-arrow" d="M ${X+9} ${cy.toFixed(1)} L ${X-5} ${(cy-7).toFixed(1)} L ${X-5} ${(cy+7).toFixed(1)} Z"/>`;});
   }
 
-  // turbine housing + runner + generator
-  const th=pipeW+30;
-  svg+=`<rect class="s-turb-body" x="${turbInX}" y="${yTurb-th/2}" width="${turbOutX-turbInX}" height="${th}" rx="7"/>`;
-  // shaft + generator
-  svg+=`<line x1="${turbCX}" y1="${yTurb-th/2}" x2="${turbCX}" y2="${yTurb-th/2-34}" stroke="var(--steel)" stroke-width="4"/>`;
-  svg+=`<rect class="s-turb-body" x="${turbCX-26}" y="${yTurb-th/2-64}" width="52" height="30" rx="5"/>`;
-  svg+=`<text class="s-val" x="${turbCX}" y="${yTurb-th/2-44}" text-anchor="middle">G</text>`;
-  // runner
-  const rr0=Math.min(15,th/2-6), spin=flowing?"s-runner spin":"s-runner";
-  svg+=`<circle class="s-runner-c" cx="${turbCX}" cy="${yTurb}" r="${rr0+3}"/>`;
-  svg+=`<g class="${spin}" style="animation-duration:${flowing?Math.max(.6,dur/2).toFixed(2):0}s;transform-box:fill-box" transform="translate(0,0)">`;
-  for(let i=0;i<6;i++){const ang=i*Math.PI/3;
-    svg+=`<line class="s-runner" x1="${turbCX}" y1="${yTurb}" x2="${(turbCX+Math.cos(ang)*rr0).toFixed(1)}" y2="${(yTurb+Math.sin(ang)*rr0).toFixed(1)}"/>`;}
+  // bulb unit (nose cone → body → tail), support column, runner, gate meter
+  const noseX=bulbX-72, tailX=bulbX+30;
+  svg+=`<path class="s-bulb" d="M ${noseX} ${yTurb} Q ${bulbX-54} ${yTurb-rb} ${bulbX-8} ${yTurb-rb} L ${tailX} ${yTurb-rb*0.45} L ${tailX} ${yTurb+rb*0.45} L ${bulbX-8} ${yTurb+rb} Q ${bulbX-54} ${yTurb+rb} ${noseX} ${yTurb} Z"/>`;
+  svg+=`<rect class="s-concrete" x="${bulbX-8}" y="${yDeck}" width="16" height="${Math.max(0,yTurb-rb-yDeck+2)}"/>`;
+  const rblade=hp*0.94, spin=flowing?"s-runner spin":"s-runner";
+  svg+=`<g class="${spin}" style="animation-duration:${flowing?Math.max(.7,+dur/1.5).toFixed(2):0}s;transform-box:fill-box">`;
+  for(let i=0;i<5;i++){const a=i*2*Math.PI/5;
+    svg+=`<line class="s-runner" x1="${runnerX}" y1="${yTurb}" x2="${(runnerX+Math.sin(a)*rblade*0.30).toFixed(1)}" y2="${(yTurb+Math.cos(a)*rblade).toFixed(1)}"/>`;}
   svg+=`</g>`;
-  // gate meter
-  const gw=54,gx=turbCX-gw/2,gy=yTurb+th/2+8;
-  svg+=`<rect class="s-gate-bg" x="${gx}" y="${gy}" width="${gw}" height="9" rx="4"/>`;
-  svg+=`<rect class="s-gate-fill" x="${gx+1}" y="${gy+1}" width="${(gw-2)*r.p.alpha/100}" height="7" rx="3"/>`;
-  svg+=`<text class="s-lbl-sm" x="${turbCX}" y="${gy+24}" text-anchor="middle">wicket gate ${r.p.alpha.toFixed(0)}%</text>`;
+  svg+=`<circle class="s-runner-c" cx="${runnerX}" cy="${yTurb}" r="6"/>`;
+  const gy=clamp(yTurb+hp+16,yTurb+hp+16,yFound-16), gxc=(phL+runnerX)/2;
+  svg+=`<rect class="s-gate-bg" x="${gxc-30}" y="${gy}" width="60" height="9" rx="4"/>`;
+  svg+=`<rect class="s-gate-fill" x="${gxc-29}" y="${gy+1}" width="${58*r.p.alpha/100}" height="7" rx="3"/>`;
+  svg+=`<text class="s-lbl-sm" x="${gxc}" y="${gy+23}" text-anchor="middle">wicket gate ${r.p.alpha.toFixed(0)}%</text>`;
 
-  // dimensions — everything is a penstock position within the fixed tanks
-  svg+=dimV(20,yS1,yS2,`H_gross = ${nf(r.p.Hgross,0)} m`,true);
-  if(r.p.dInlet>0.01) svg+=dimV(resR-14,yS1,yIn,`intake ${nf(r.p.dInlet,1)} m`,false);
-  svg+=dimV(turbInX-16,yS2,yTurb,(r.p.Hts>=0?`+${nf(r.p.Hts,1)} m`:`${nf(r.p.Hts,1)} m`),false);
-  svg+=dimV(outX+22,yS2,yOut,(r.p.dOutlet>=0?`outlet ${nf(r.p.dOutlet,1)} m`:`${nf(-r.p.dOutlet,1)} m above`),false);
+  // dimensions
+  svg+=dimV(24,yS1,yS2,`H_gross = ${nf(r.p.Hgross,1)} m`,true);
+  if(r.p.dInlet>0.01) svg+=dimV(phL+16,yS1,yIn,`intake ${nf(r.p.dInlet,1)} m`,false);
+  svg+=dimV(noseX-14,yS2,yTurb,(r.p.Hts>=0?`bulb +${nf(r.p.Hts,1)} m`:`bulb ${nf(r.p.Hts,1)} m`),false);
+  svg+=dimV(phR-16,yS2,yOut,`outlet ${nf(r.p.dOutlet,1)} m`,false);
 
-  // pressure callouts at turbine inlet / outlet
-  svg+=callout(turbInX-142,yTurb-48,"TURBINE IN",`${nf(r.pin.pG/1000,0)} kPa`,`${nf(r.pin.pAbs/1000,0)} kPa abs`);
-  svg+=callout(outX+4,yTurb-72,"TURBINE OUT",`${nf(r.pout.pG/1000,0)} kPa`,`${nf(r.pout.pAbs/1000,0)} kPa abs`);
+  // pressure callouts (runner inlet / draft outlet)
+  svg+=callout(clamp(runnerX-58,phL+6,W-116),clamp(yTurb-rb-64,TOP+18,H-90),"RUNNER IN",`${nf(r.pin.pG/1000,0)} kPa`,`${nf(r.pin.pAbs/1000,0)} kPa abs`);
+  svg+=callout(phR+10,clamp(yOut-34,TOP+30,H-90),"DRAFT OUT",`${nf(r.pout.pG/1000,0)} kPa`,`${nf(r.pout.pAbs/1000,0)} kPa abs`);
 
-  // cavitation glow at min station
+  // cavitation glow at the lowest-pressure station
   if(r.flowing && r.minS.pAbs<=r.wp.pv+15000){
-    const gxp = r.minS.key==="in"?inX : (r.minS.key==="out"?outX : turbOutX);
-    const gyp = r.minS.key==="in"?yIn : yTurb;
-    const col = r.minS.pAbs<=r.wp.pv?"cav-glow":"cav-glow";
-    svg+=`<circle class="${col}" cx="${gxp}" cy="${gyp}" r="26"/>`;
+    const gxp = r.minS.key==="in"?phL : (r.minS.key==="out"?phR : runnerX);
+    const gyp = r.minS.key==="in"?yIn : (r.minS.key==="out"?yOut : yTurb);
+    svg+=`<circle class="cav-glow" cx="${gxp}" cy="${gyp}" r="28"/>`;
   }
-  // reservoir labels
-  svg+=`<text class="s-lbl" x="60" y="${yS1-10}">Headrace (upper reservoir)</text>`;
-  svg+=`<text class="s-lbl" x="${resL2}" y="${yLoBed-10}" text-anchor="end">Tailrace (lower reservoir)</text>`;
+  // river labels
+  svg+=`<text class="s-lbl" x="72" y="${yS1-9}">Headwater (upstream river)</text>`;
+  svg+=`<text class="s-lbl" x="${W-72}" y="${yS2-9}" text-anchor="end">Tailwater (downstream river)</text>`;
+  svg+=`<text class="s-lbl-sm" x="${bulbX-44}" y="${clamp(yTurb-rb-8,TOP+16,H)}">bulb unit</text>`;
+  svg+=`<text class="s-lbl-sm" x="${runnerX+30}" y="${clamp(y(zOut)+D*0.78*sc+15,TOP,H-6)}">draft tube</text>`;
+  svg+=`<text class="s-lbl-sm" x="${phR+10}" y="${yS2+15}">datum  z = 0 (tailwater)</text>`;
 
   document.getElementById("scene").innerHTML=svg;
 }
@@ -621,8 +616,9 @@ function renderKPIs(r,st){
   el.innerHTML=`
    <div class="kpi accent"><div class="k">Shaft power</div>
      <div class="big">${nf(r.Pshaft/1e6,2)}<span class="u">MW</span></div></div>
-   <div class="kpi"><div class="k">Flow rate Q</div>
-     <div class="big">${nf(r.Q,2)}<span class="u">m³/s</span></div></div>
+   <div class="kpi"><div class="k">Flow through turbine Q</div>
+     <div class="big">${nf(r.Q,0)}<span class="u">m³/s</span></div>
+     <div class="sub" style="font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:2px">≈ ${nf(r.Q/0.0283168,0)} cusecs</div></div>
    <div class="kpi"><div class="k">Net head on turbine</div>
      <div class="big">${nf(r.Hnet,1)}<span class="u">m</span></div></div>
    <div class="kpi"><div class="k">Status</div>
@@ -639,7 +635,7 @@ function renderWarnings(r){
   if(r.flowing){
     if(r.minS.pAbs<=r.wp.pv){
       warns.push({sev:"crit",t:`Cavitation likely at the ${r.minS.name}`,
-        m:`Absolute pressure there (${nf(r.minS.pAbs/1000,1)} kPa) has fallen to the water's vapour pressure (${nf(r.wp.pv/1000,1)} kPa at ${r.p.T}°C). Vapour bubbles will form and collapse — expect erosion, noise and lost efficiency. Increase outlet submergence, lower the water temperature, reduce velocity (larger pipe / smaller gate) or set the turbine deeper.`});
+        m:`Absolute pressure there (${nf(r.minS.pAbs/1000,1)} kPa) has fallen to the water's vapour pressure (${nf(r.wp.pv/1000,1)} kPa at ${r.p.T}°C). Vapour bubbles will form and collapse — expect erosion, noise and lost efficiency. Set the bulb deeper (more submergence), lower the water temperature, or reduce velocity with a larger passage / smaller gate.`});
     } else if(r.minS.pAbs<=r.wp.pv+15000){
       warns.push({sev:"warn",t:`Low pressure margin at the ${r.minS.name}`,
         m:`Minimum absolute pressure is ${nf(r.minS.pAbs/1000,1)} kPa — only ${nf((r.minS.pAbs-r.wp.pv)/1000,1)} kPa above vapour pressure. Cavitation is not predicted yet but the margin is thin.`});
@@ -649,15 +645,15 @@ function renderWarnings(r){
         m:"Draft-tube / runner-exit cavitation becomes likely as σ drops below ~0.1. More outlet submergence raises σ."});
     }
     if(r.V>7){
-      warns.push({sev:"warn",t:`High penstock velocity (${nf(r.V,1)} m/s)`,
-        m:"Above ~7 m/s, wall erosion and water-hammer over-pressures on sudden gate closure become concerns. Consider a larger diameter."});
+      warns.push({sev:"warn",t:`High passage velocity (${nf(r.V,1)} m/s)`,
+        m:"Above ~7 m/s in the water passage, wall erosion and surge over-pressures on sudden gate closure become concerns. Consider a larger passage diameter."});
     }
     if(r.regime==="transitional"){
       warns.push({sev:"info",t:`Transitional flow (Re = ${nf(r.Re,0)})`,
         m:"Reynolds number is between 2300 and 4000; the friction factor is inherently uncertain in this band."});
     } else if(r.regime==="laminar"){
       warns.push({sev:"info",t:`Laminar flow (Re = ${nf(r.Re,0)})`,
-        m:"Very low velocity — friction follows f = 64/Re. Unusual for a penstock; check the gate/geometry."});
+        m:"Very low velocity — friction follows f = 64/Re. Unusual for a hydro passage; check the gate/geometry."});
     }
   }
   if(!warns.some(w=>w.sev==="crit"||w.sev==="warn") && r.flowing){
@@ -677,21 +673,21 @@ function tile(k,val,unit,sub,cls=""){
 function renderTiles(r){
   const cavCls=r.flowing&&r.pout.pAbs<=r.wp.pv?"hot":(r.flowing&&r.pout.pAbs<=r.wp.pv+15000?"warmv":"");
   const t=[
-    tile("Velocity in penstock",nf(r.V,2),"m/s"),
+    tile("Velocity in passage",nf(r.V,2),"m/s",`Q ≈ ${nf(r.Q/0.0283168,0)} cusecs`),
     tile("Reynolds number",r.Re>=1e4?nf(r.Re/1e6,2)+"×10⁶":nf(r.Re,0),"",r.regime),
     tile("Friction factor f",nf(r.f,4),"","Darcy–Weisbach"),
     tile("Head loss (total)",nf(r.hL,2),"m",`friction ${nf(r.hf1+r.hf2,2)} + minor ${nf(r.hUp+r.hDn,2)} m`),
-    tile("Turbine INLET pressure",nf(r.pin.pG/1000,0),"kPa",`${nf(r.pin.pAbs/1000,0)} kPa abs · ${nf(r.pin.pHead,1)} m`),
-    tile("Turbine OUTLET pressure",nf(r.pout.pG/1000,0),"kPa",`${nf(r.pout.pAbs/1000,0)} kPa abs · ${nf(r.pout.pHead,1)} m`,cavCls),
+    tile("Runner INLET pressure",nf(r.pin.pG/1000,0),"kPa",`${nf(r.pin.pAbs/1000,0)} kPa abs · ${nf(r.pin.pHead,1)} m`),
+    tile("Runner OUTLET pressure",nf(r.pout.pG/1000,0),"kPa",`${nf(r.pout.pAbs/1000,0)} kPa abs · ${nf(r.pout.pHead,1)} m`,cavCls),
     tile("Pressure drop across turbine",nf(r.dPturb/1000,0),"kPa",`= net head ${nf(r.Hnet,1)} m`),
     tile("Hydraulic power ρgQH",nf(r.Phyd/1e6,2),"MW",`shaft ${nf(r.Pshaft/1e6,2)} MW at η=${r.p.eta}`),
     tile("Margin above vapour (outlet)",nf(r.marginVap,1),"m",`${nf((r.pout.pAbs-r.wp.pv)/1000,0)} kPa · NPSH_a ${nf(r.NPSHa,1)} m`,cavCls),
     tile("Thoma number σ",Number.isFinite(r.sigma)?nf(r.sigma,2):"—","",r.flowing?"crit ≈ 0.1":""),
-    tile("Turbine setting vs tailrace",nf(r.zTurb,1),"m",`${r.zTurb>=0?nf(r.zTurb,1)+" m above datum":nf(-r.zTurb,1)+" m submerged"} · draft head Hs ${nf(r.zTurb,1)} m`,cavCls),
+    tile("Bulb setting vs tailwater",nf(r.zTurb,1),"m",`${r.zTurb>=0?nf(r.zTurb,1)+" m above tailwater":nf(-r.zTurb,1)+" m submerged"} · draft head Hs ${nf(r.zTurb,1)} m`,cavCls),
     tile("Water density ρ",nf(r.wp.rho,1),"kg/m³",`at ${r.p.T} °C`),
     tile("Kinematic viscosity ν",nf(r.wp.nu*1e6,3),"mm²/s",`μ ${nf(r.wp.mu*1e3,3)} mPa·s`),
     tile("Vapour pressure p_v",nf(r.wp.pv/1000,2),"kPa",`at ${r.p.T} °C`),
-    tile("Pipe roughness ε",nf(r.p.eps,3),"mm",`ε/D ${nf(r.rr,5)}`),
+    tile("Passage roughness ε",nf(r.p.eps,3),"mm",`ε/D ${nf(r.rr,5)}`),
   ];
   document.getElementById("tiles").innerHTML=t.join("");
 }

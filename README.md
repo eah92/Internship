@@ -6,53 +6,57 @@ server, build step or libraries required.
 
 | File | What it is |
 |---|---|
-| [`hydro-bernoulli-simulator.html`](hydro-bernoulli-simulator.html) | **Penstock & turbine — Bernoulli hydraulics simulator** (see below) |
+| [`hydro-bernoulli-simulator.html`](hydro-bernoulli-simulator.html) | **Run-of-river bulb turbine & draft tube — Bernoulli hydraulics simulator** (see below) |
 | [`governor-simulator.html`](governor-simulator.html) | Kaplan bulb-turbine governor hydraulic-system simulator |
 
 ---
 
-## Penstock & Turbine — Bernoulli Hydraulics Simulator
+## Bulb Turbine & Draft Tube — Bernoulli Hydraulics Simulator
 
-A physics-informed, steady-state model of a two-reservoir hydropower scheme:
-a **headrace** (upper reservoir) and **tailrace** (lower reservoir) joined by a
-**penstock** with a **turbine** in the line. It solves the extended Bernoulli
-(energy) equation *with real losses* and turbine head, updating a live
-cross-section, numeric readouts and grade-line charts as you drive the controls.
+A physics-informed, steady-state model of a **run-of-river bulb-turbine**
+powerhouse: the **headwater** (upstream river) and **tailwater** (downstream
+river) sit either side of a barrage, and water passes horizontally through the
+**intake → bulb turbine → diverging draft-tube channel** into the tailwater. It
+solves the extended Bernoulli (energy) equation *with real losses* and turbine
+head, updating a live cross-section, numeric readouts and grade-line charts as
+you drive the controls. It is scaled to a large low-head unit — **design flow
+≈ 9 000 cusecs (≈ 255 m³/s)** at a gross head of order 10–25 m.
 
 ### The physics
 
-Energy balance between the two free surfaces (both at atmospheric pressure,
-both effectively still because the reservoirs are large):
+Energy balance between the two river surfaces (both at atmospheric pressure,
+both effectively still):
 
 ```
 z₁ + p₁/ρg + V₁²/2g  =  z₂ + p₂/ρg + V₂²/2g  +  h_turbine + h_loss
         ⟶        H_gross = h_turbine + h_loss
 ```
 
-* **Head loss** `h_loss = (f·L/D + ΣK)·V²/2g` — Darcy–Weisbach friction plus
-  entrance/exit/bend minor losses. The Darcy factor `f` is found from the
-  **Swamee–Jain** correlation (laminar `64/Re` below Re = 2300) and iterated
-  with the flow so it stays consistent with velocity and temperature.
-* **Turbine + wicket gate** behave as a variable nozzle,
+* **Head loss** `h_loss = (f·L/D + ΣK)·V²/2g` through the intake and draft-tube
+  passage. The Darcy factor `f` is found from the **Swamee–Jain** correlation
+  (laminar `64/Re` below Re = 2300) and iterated with the flow so it stays
+  consistent with velocity and temperature. The submerged passage is treated as
+  a pressurised conduit (Darcy–Weisbach), not open-channel (Manning).
+* **Runner + wicket gate** behave as a variable nozzle,
   `Q = C_d·A_throat·(gate) · √(2g·H_net)`, so closing the gate throttles the
   flow and re-partitions the available head. Shaft power `P = η·ρg·Q·H_net`.
 * **Water properties** (density, viscosity, vapour pressure) are interpolated
-  from standard tables at the chosen temperature; **pipe roughness** ε comes
-  from the selected material.
+  from standard tables at the chosen temperature; **passage roughness** ε comes
+  from the selected lining.
 
 ### User-controllable inputs
 
-* Gross head between the two free (fixed) reservoir surfaces
-* The **three penstock positions** — the machine is designed by moving the pipe
-  within the fixed reservoirs, whose depth never changes:
-  * intake depth below the upper surface,
-  * turbine-centre height above the tailrace datum (− = below/submerged, which
+* Gross head between the headwater and tailwater river levels
+* The **three water-passage positions** — the scheme is designed by placing the
+  passage relative to the two fixed river levels:
+  * intake-sill depth below the headwater,
+  * bulb (turbine) centreline height above the tailwater (− = submerged, which
     sets the draft head and cavitation margin), and
-  * outlet depth below the tailrace surface (− = discharging above it)
-* Penstock length, draft length and inside diameter
-* Pipe material (PVC → riveted steel) and water temperature
-* Wicket-gate opening, turbine throat diameter and efficiency
-* Minor-loss coefficients and turbine discharge coefficient (assumptions)
+  * draft-tube outlet depth below the tailwater
+* Intake and draft-tube lengths and the water-passage diameter
+* Passage lining (concrete → steel → …) and water temperature
+* Wicket-gate opening, runner throat diameter and efficiency
+* Minor-loss coefficients and runner discharge coefficient (assumptions)
 
 ### What it computes
 
